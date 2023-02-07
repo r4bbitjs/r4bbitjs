@@ -1,3 +1,9 @@
+# libs & build output
 node_modules
 dist
+
+# editor config files
 .idea
+
+# npm files, we're using pnpm
+package-lock.json
