@@ -1,4 +1,4 @@
-import { Options } from "amqplib";
+import { Options } from 'amqplib';
 
 export type ExchangeType = 'direct' | 'topic' | 'headers' | 'fanout';
 

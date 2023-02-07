@@ -1,5 +1,5 @@
-import { connect, Channel } from "amqplib";
-import { RouteRegister } from "../Server/server.types";
+import { connect, Channel } from 'amqplib';
+import { RouteRegister } from '../Server/server.types';
 
 const queueRegisterPerExchange = async (
   exchangeName: string,
@@ -8,17 +8,18 @@ const queueRegisterPerExchange = async (
   queueName: string,
 ) => {
   switch (routeRegister.exchangeType) {
-    case "topic":
-        await channel.assertQueue(queueName, { durable: true });
-        routeRegister.routes.forEach((route) => {
-            channel.bindQueue(queueName, exchangeName, route);
-        });
-    case "fanout":
-      break;
-    case "direct":
-      break;
-    case "headers":
-      break;
+  case 'topic':
+    await channel.assertQueue(queueName, { durable: true });
+    routeRegister.routes.forEach((route) => {
+      channel.bindQueue(queueName, exchangeName, route);
+    });
+    break;
+  case 'fanout':
+    break;
+  case 'direct':
+    break;
+  case 'headers':
+    break;
   }
 };
 

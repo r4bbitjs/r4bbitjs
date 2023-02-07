@@ -1,5 +1,5 @@
-import { Options } from "amqplib";
-import { RouteRegister, ExchangeType } from "./server.types";
+import { Options } from 'amqplib';
+import { RouteRegister, ExchangeType } from './server.types';
 
 export class Server {
   private _routes: Record<string, RouteRegister> = {};
@@ -8,7 +8,7 @@ export class Server {
     return this.routes;
   }
 
-  registerRoute(routeName: string, exchangeName: keyof Server["_routes"]) {
+  registerRoute(routeName: string, exchangeName: keyof Server['_routes']) {
     if (exchangeName in this._routes) {
       this._routes[exchangeName].routes.push(routeName);
     }
