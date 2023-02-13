@@ -1,46 +1,36 @@
-import { connect, Channel } from 'amqplib';
-import { RouteRegister } from '../Server/server.types';
+import amqp, { Channel, ChannelWrapper } from 'amqp-connection-manager';
+import { ConsumeMessage } from 'amqplib';
 
-const queueRegisterPerExchange = async (
-  exchangeName: string,
-  routeRegister: RouteRegister,
-  channel: Channel,
-  queueName: string,
-) => {
-  switch (routeRegister.exchangeType) {
-  case 'topic':
-    await channel.assertQueue(queueName, { durable: true });
-    routeRegister.routes.forEach((route) => {
-      channel.bindQueue(queueName, exchangeName, route);
-    });
-    break;
-  case 'fanout':
-    break;
-  case 'direct':
-    break;
-  case 'headers':
-    break;
-  }
+type ConnectionUrl = string[];
+
+export type Bindings = {
+    [key: string]: {
+        [key: string]: string[];
+    };
+}
+
+const handleMessage = (msg: ConsumeMessage | null) => {
+  const message = msg?.content.toString();
+  console.log('Message received: ', message);
 };
 
-export const initRabbit = async (
-  serverRegister: Record<string, RouteRegister>,
-  connectionURL: string,
-  queueName: string,
-) => {
-  const connection = await connect(connectionURL);
-  const channel = await connection.createChannel();
+export const initRabbit = async (connectionUrls: ConnectionUrl) => {
+  const connection = amqp.connect(connectionUrls);
+  
+  const channelWrapper = connection.createChannel();
 
-  for (const exchangeName in serverRegister) {
-    const routeRegister = serverRegister[exchangeName];
-    const exchangeType = routeRegister.exchangeType;
-    const options = routeRegister.options;
-    await channel.assertExchange(exchangeName, exchangeType, options);
-    await queueRegisterPerExchange(
-      exchangeName,
-      routeRegister,
-      channel,
-      queueName,
-    );
-  }
+  await channelWrapper.waitForConnect();
+
+  return channelWrapper;
+};
+
+export const registerRoute = (channelWrapper: ChannelWrapper) => async (queueName: string, key: string, exchangeName: string): Promise<void> => {
+  channelWrapper.addSetup((channel: Channel) => {
+    return Promise.all([
+      channel.assertExchange(exchangeName, 'topic'),
+      channel.assertQueue(queueName),
+      channel.bindQueue(queueName, exchangeName, key),
+      channel.consume(queueName, handleMessage, { noAck: true })
+    ]);
+  });
 };
