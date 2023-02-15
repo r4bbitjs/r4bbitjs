@@ -1,4 +1,4 @@
-import {initRabbit, publishMessage, registerRoute} from '../src/Init/init';
+import {initRabbit, publishMessage, registerRoute, tempSetup} from '../src/Init/init';
 
 type TestObject = {
     exchangeName: string;

@@ -19,6 +19,13 @@ const handleMessage = (msg: ConsumeMessage | null) => {
   console.log('Message received: ', message);
 };
 
+export const tempSetup = async (channel: Channel) => {
+  channel.assertExchange('exchange1', 'topic', { durable: true }),
+  channel.assertQueue('queue1', { durable: true }),
+  channel.bindQueue('queue1', 'exchange1', '*.test2'),
+  channel.consume('queue1', handleMessage, { noAck: true });
+};
+
 export const initRabbit = async (connectionUrls: ConnectionUrl, options?: InitRabbitOptions) => {
   const connection = amqp.connect(connectionUrls, options?.connectOptions);
   const channelWrapper = connection.createChannel(options?.createChannelOptions);
