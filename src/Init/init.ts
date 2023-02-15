@@ -19,13 +19,6 @@ const handleMessage = (msg: ConsumeMessage | null) => {
   console.log('Message received: ', message);
 };
 
-export const tempSetup = async (channel: Channel) => {
-  channel.assertExchange('exchange1', 'topic', { durable: true }),
-  channel.assertQueue('queue1', { durable: true }),
-  channel.bindQueue('queue1', 'exchange1', '*.test2'),
-  channel.consume('queue1', handleMessage, { noAck: true });
-};
-
 export const initRabbit = async (connectionUrls: ConnectionUrl, options?: InitRabbitOptions) => {
   const connection = amqp.connect(connectionUrls, options?.connectOptions);
   const channelWrapper = connection.createChannel(options?.createChannelOptions);
@@ -37,8 +30,8 @@ export const initRabbit = async (connectionUrls: ConnectionUrl, options?: InitRa
 export const registerRoute = (channelWrapper: ChannelWrapper) => async (queueName: string, key: string, exchangeName: string): Promise<void> => {
   await channelWrapper.addSetup((channel: Channel) => {
     return Promise.all([
-      channel.assertExchange(exchangeName, 'topic', { durable: true }),
-      channel.assertQueue(queueName, { durable: true }),
+      channel.assertExchange(exchangeName, 'topic'),
+      channel.assertQueue(queueName),
       channel.bindQueue(queueName, exchangeName, key),
       channel.consume(queueName, handleMessage, { noAck: true })
     ]);
