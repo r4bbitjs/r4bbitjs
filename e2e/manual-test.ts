@@ -1,4 +1,4 @@
-import { initRabbit, registerRoute } from '../Init/init';
+import {initRabbit, publishMessage, registerRoute} from '../src/Init/init';
 
 type TestObject = {
     exchangeName: string;
@@ -19,7 +19,6 @@ const testObject = [{
       queueName: 'queue2',
       keys: ['test3.*', '*.test2']
     },
-
   ]
 },
 {
@@ -75,7 +74,19 @@ const test = async () => {
   }
 
 };
+let counter = 0;
+const testSendMessage = async () => {
+  const channelWrapper = await initRabbit(['amqp://localhost']);
+  const client = publishMessage(channelWrapper);
+  setInterval(async () => {
+    await client('exchange1', 'something.test2', 'testMessage: ' + counter);
+    counter ++;
+  },1000);
+
+  console.log('end of test');
+};
 
 (async () => {
   await test();
+  await testSendMessage();
 })();
