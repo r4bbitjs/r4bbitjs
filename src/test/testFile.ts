@@ -19,7 +19,7 @@ const testObject = [{
       queueName: 'queue2',
       keys: ['test3.*', '*.test2']
     },
-            
+
   ]
 },
 {
@@ -33,7 +33,7 @@ const testObject = [{
       queueName: 'queue3',
       keys: ['test1.*', '*.test5'],
     },
-            
+
   ]
 },
 ];
@@ -51,7 +51,7 @@ const flatTheObjects =  (testObject: TestObject[]): FlatObjects[] => {
   for (const test of testObject) {
     for (const queue of test.queues) {
       for (const key of queue.keys) {
-        flattenedObjects.push({ 
+        flattenedObjects.push({
           exchangeName: test.exchangeName,
           queueName: queue.queueName,
           key
@@ -69,11 +69,11 @@ const test = async () => {
   const routeRegister = registerRoute(channelWrapper);
 
   const flattenedObjects = flatTheObjects(testObject);
-  
+
   for (const obj of flattenedObjects) {
     await routeRegister(obj.queueName, obj.key, obj.exchangeName);
   }
-  
+
 };
 
 (async () => {
