@@ -1,4 +1,4 @@
-import { initRabbit, publishMessage, registerRoute } from '../src/Init/init';
+import { initRabbit} from '../src/Init/init';
 
 type TestObject = {
   exchangeName: string;
@@ -62,13 +62,16 @@ const flatTheObjects = (testObject: TestObject[]): FlatObjects[] => {
   return flattenedObjects;
 };
 
+export const testReadyObjects = flatTheObjects(testObject);
+
 
 const test = async () => {
-  const channelWrapper = await initRabbit(['amqp://localhost']);
+  const channelWrapper = await initRabbit('amqp://localhost');
   const routeRegister = registerRoute(channelWrapper);
 
   const flattenedObjects = flatTheObjects(testObject);
 
+  console.log(flattenedObjects);
   for (const obj of flattenedObjects) {
     await routeRegister(obj.queueName, obj.key, obj.exchangeName);
   }
@@ -76,7 +79,7 @@ const test = async () => {
 };
 let counter = 0;
 const testSendMessage = async () => {
-  const channelWrapper = await initRabbit(['amqp://localhost']);
+  const channelWrapper = await initRabbit('amqp://localhost');
   const client = publishMessage(channelWrapper);
   setInterval(async () => {
     await client('exchange1', 'something.test2', 'testMessage: ' + counter);
@@ -86,7 +89,10 @@ const testSendMessage = async () => {
   console.log('end of test');
 };
 
-(async () => {
-  await test();
-  await testSendMessage();
-})();
+// (async () => {
+//   await test();
+//   await testSendMessage();
+// })();
+
+const flattenedObjects = flatTheObjects(testObject);
+console.log(flattenedObjects);

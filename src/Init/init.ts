@@ -15,16 +15,7 @@ export const initRabbit = async (connectionUrls: ConnectionUrl, options?: InitRa
 
 /*
   TODO: 
-
-   * functor -> factory
-   * auto ACK
-   * give possible options in all optional places
-   * split the code between client and server
    * e2e tests 
    * ZOD validation 
+   * initRabbit should accept an array of urls and string of one url
 */
-
-
-export const publishMessage = (channelWrapper: ChannelWrapper) => async (exchangeName: string, key: string, message: string) => {
-  await channelWrapper.publish(exchangeName, key, message, { persistent: true });
-};
