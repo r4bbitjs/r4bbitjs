@@ -3,6 +3,7 @@ lockfileVersion: 5.4
 specifiers:
   '@changesets/cli': ^2.26.0
   '@types/amqplib': ^0.10.1
+  '@types/node': ^18.14.0
   '@typescript-eslint/eslint-plugin': ^5.51.0
   '@typescript-eslint/parser': ^5.51.0
   amqp-connection-manager: ^4.1.10
@@ -20,11 +21,12 @@ dependencies:
 devDependencies:
   '@changesets/cli': 2.26.0
   '@types/amqplib': 0.10.1
+  '@types/node': 18.14.0
   '@typescript-eslint/eslint-plugin': 5.51.0_b635kmla6dsb4frxfihkw4m47e
   '@typescript-eslint/parser': 5.51.0_4vsywjlpuriuw3tl5oq6zy5a64
   amqplib: 0.10.3
   eslint: 8.33.0
-  ts-node: 10.9.1_typescript@4.9.5
+  ts-node: 10.9.1_tncu2ai53lzgmizdedur7lbibe
   tsup: 6.6.0_6qtx7vkbdhwvdm4crzlegk4mvi
   typescript: 4.9.5
 
@@ -570,7 +572,7 @@ packages:
   /@types/amqplib/0.10.1:
     resolution: {integrity: sha512-j6ANKT79ncUDnAs/+9r9eDujxbeJoTjoVu33gHHcaPfmLQaMhvfbH2GqSe8KUM444epAp1Vl3peVOQfZk3UIqA==}
     dependencies:
-      '@types/node': 12.20.55
+      '@types/node': 18.14.0
     dev: true
 
   /@types/is-ci/3.0.0:
@@ -589,6 +591,10 @@ packages:
 
   /@types/node/12.20.55:
     resolution: {integrity: sha512-J8xLz7q2OFulZ2cyGTLE1TbbZcjpno7FaN6zdJNrgAdrJ+DZzh/uFR6YrTb4C+nXakvud8Q4+rbhoIWlYQbUFQ==}
+    dev: true
+
+  /@types/node/18.14.0:
+    resolution: {integrity: sha512-5EWrvLmglK+imbCJY0+INViFWUHg1AHel1sq4ZVSfdcNqGy9Edv3UB9IIzzg+xPaUcAgZYcfVs2fBcwDeZzU0A==}
     dev: true
 
   /@types/normalize-package-data/2.4.1:
@@ -2394,7 +2400,7 @@ packages:
         optional: true
     dependencies:
       lilconfig: 2.0.6
-      ts-node: 10.9.1_typescript@4.9.5
+      ts-node: 10.9.1_tncu2ai53lzgmizdedur7lbibe
       yaml: 1.10.2
     dev: true
 
@@ -2867,7 +2873,7 @@ packages:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
     dev: true
 
-  /ts-node/10.9.1_typescript@4.9.5:
+  /ts-node/10.9.1_tncu2ai53lzgmizdedur7lbibe:
     resolution: {integrity: sha512-NtVysVPkxxrwFGUUxGYhfux8k78pQB3JqYBXlLRZgdGUqTO5wU/UyHop5p70iEbGhB7q5KmiZiU0Y3KlJrScEw==}
     hasBin: true
     peerDependencies:
@@ -2886,6 +2892,7 @@ packages:
       '@tsconfig/node12': 1.0.11
       '@tsconfig/node14': 1.0.3
       '@tsconfig/node16': 1.0.3
+      '@types/node': 18.14.0
       acorn: 8.8.2
       acorn-walk: 8.2.0
       arg: 4.1.3

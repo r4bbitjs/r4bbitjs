@@ -1,11 +1,11 @@
-import {initRabbit, publishMessage, registerRoute, tempSetup} from '../src/Init/init';
+import { initRabbit, publishMessage, registerRoute } from '../src/Init/init';
 
 type TestObject = {
-    exchangeName: string;
-    queues: {
-        queueName: string;
-        keys: string[];
-    }[];
+  exchangeName: string;
+  queues: {
+    queueName: string;
+    keys: string[];
+  }[]
 }
 
 const testObject = [{
@@ -38,14 +38,14 @@ const testObject = [{
 ];
 
 type FlatObjects = {
-    exchangeName: string;
-    queueName: string;
-    key: string;
+  exchangeName: string;
+  queueName: string;
+  key: string;
 }
 
 
 
-const flatTheObjects =  (testObject: TestObject[]): FlatObjects[] => {
+const flatTheObjects = (testObject: TestObject[]): FlatObjects[] => {
   const flattenedObjects: FlatObjects[] = [];
   for (const test of testObject) {
     for (const queue of test.queues) {
@@ -80,8 +80,8 @@ const testSendMessage = async () => {
   const client = publishMessage(channelWrapper);
   setInterval(async () => {
     await client('exchange1', 'something.test2', 'testMessage: ' + counter);
-    counter ++;
-  },1000);
+    counter++;
+  }, 1000);
 
   console.log('end of test');
 };

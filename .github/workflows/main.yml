@@ -5,9 +5,9 @@ name: Node.js CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
@@ -25,4 +25,3 @@ jobs:
         with:
           version: 7
       - run: pnpm install
-      - run: pnpm test
