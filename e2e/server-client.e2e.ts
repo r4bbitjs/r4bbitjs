@@ -1,9 +1,8 @@
-import { getServer } from '../src/Server/server';
-import { getClient } from '../src/Client/client';
-import { testReadyObjects } from './manual-test';
-import { AckHandler } from '../src/Server/server.type';
 import { ConsumeMessage } from 'amqplib';
-import { AckObj } from '../src/Server/server.type';
+import { getClient } from '../src/Client/client';
+import { getServer } from '../src/Server/server';
+import { AckHandler } from '../src/Server/server.type';
+import { testReadyObjects } from './test-objects';
 
 const handlerFunc: AckHandler =
   ({ ack }) =>
@@ -13,7 +12,7 @@ const handlerFunc: AckHandler =
 
       console.log(msg.content.toString());
 
-      
+
       try {
         ack(msg);
       } catch (error) {
@@ -39,7 +38,7 @@ const basicHandler = (msg: ConsumeMessage | null) => {
       obj.key,
       obj.exchangeName,
       handlerFunc,
-      { noAck: false}
+      { noAck: false }
     );
   }
 

@@ -25,3 +25,4 @@ jobs:
         with:
           version: 7
       - run: pnpm install
+      - run: pnpm test

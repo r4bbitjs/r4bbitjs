@@ -1,8 +1,16 @@
-import amqp, { ChannelWrapper, ConnectionUrl } from 'amqp-connection-manager';
+import amqp, { ChannelWrapper } from 'amqp-connection-manager';
 import { InitRabbitOptions } from './init.type';
 
 
-export const initRabbit = async (connectionUrls: ConnectionUrl, options?: InitRabbitOptions): Promise<ChannelWrapper> => {
+export const initRabbit = async (connectionUrls: string[] | string, options?: InitRabbitOptions): Promise<ChannelWrapper> => {
+
+  try {
+
+  } catch (error: unknown) {
+    throw new Error(`Invalid RabbitMQ connection URL: ${error}`);
+  }
+
+
   try {
     const connection = amqp.connect(connectionUrls, options?.connectOptions);
     const channelWrapper = connection.createChannel(options?.createChannelOptions);
@@ -12,10 +20,3 @@ export const initRabbit = async (connectionUrls: ConnectionUrl, options?: InitRa
     throw new Error(`Error while connecting to RabbitMQ: ${error}`);
   }
 };
-
-/*
-  TODO: 
-   * e2e tests 
-   * ZOD validation 
-   * initRabbit should accept an array of urls and string of one url
-*/
