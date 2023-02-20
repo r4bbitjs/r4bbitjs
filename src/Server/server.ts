@@ -1,29 +1,63 @@
-import { Options } from "amqplib";
-import { RouteRegister, ExchangeType } from "./server.types";
+import {
+  Channel,
+  ChannelWrapper,
+  ConnectionUrl,
+} from 'amqp-connection-manager';
+import { initRabbit } from '../Init/init';
+import { InitRabbitOptions } from '../Init/init.type';
+import { AckHandler, Handler } from './server.type';
+import { Options } from 'amqplib';
 
-export class Server {
-  private _routes: Record<string, RouteRegister> = {};
+class Server {
+  private channelWrapper?: ChannelWrapper;
 
-  get routes(): Record<string, RouteRegister> {
-    return this.routes;
-  }
+  public init = async (
+    connectionUrls: ConnectionUrl,
+    options?: InitRabbitOptions,
+  ): Promise<void> => {
+    this.channelWrapper = await initRabbit(connectionUrls, options);
 
-  registerRoute(routeName: string, exchangeName: keyof Server["_routes"]) {
-    if (exchangeName in this._routes) {
-      this._routes[exchangeName].routes.push(routeName);
-    }
-  }
+    console.log('Server initialized');
+  };
 
-  createExchange(
+  async registerRoute(
+    queueName: string,
+    key: string,
     exchangeName: string,
-    exchangeType: ExchangeType,
-    options?: Options.AssertExchange,
-  ) {
-    if (!options) {
-      // default options
-      options = { durable: true };
+    handlerFunction: Handler | AckHandler,
+    options?: Options.Consume,
+  ): Promise<void> {
+    if (!this.channelWrapper) {
+      throw new Error('You have to trigger init method first');
     }
 
-    this._routes[exchangeName] = { routes: [], exchangeType, options };
+    const onMessage = !options?.noAck
+      ? (handlerFunction as AckHandler)({
+        ack: this.channelWrapper.ack.bind(this.channelWrapper),
+        nack: this.channelWrapper.nack.bind(this.channelWrapper),
+      })
+      : handlerFunction as Handler;    
+
+    const defaultConsumerOptions = options ?? { noAck: false };
+
+    await this.channelWrapper.addSetup(async (channel: Channel) => {
+      await channel.assertExchange(exchangeName, 'topic');
+      await channel.assertQueue(queueName);
+      await channel.bindQueue(queueName, exchangeName, key);
+      await channel.consume(queueName, onMessage, defaultConsumerOptions);
+    });
   }
 }
+
+let server: Server;
+export const getServer = async (
+  connectionUrls: ConnectionUrl,
+  options?: InitRabbitOptions,
+) => {
+  if (!server) {
+    server = new Server();
+    await server.init(connectionUrls, options);
+  }
+
+  return server;
+};

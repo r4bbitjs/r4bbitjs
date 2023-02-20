@@ -1,45 +1,21 @@
-import { connect, Channel } from "amqplib";
-import { RouteRegister } from "../Server/server.types";
+import amqp, { ChannelWrapper, ConnectionUrl } from 'amqp-connection-manager';
+import { InitRabbitOptions } from './init.type';
 
-const queueRegisterPerExchange = async (
-  exchangeName: string,
-  routeRegister: RouteRegister,
-  channel: Channel,
-  queueName: string,
-) => {
-  switch (routeRegister.exchangeType) {
-    case "topic":
-        await channel.assertQueue(queueName, { durable: true });
-        routeRegister.routes.forEach((route) => {
-            channel.bindQueue(queueName, exchangeName, route);
-        });
-    case "fanout":
-      break;
-    case "direct":
-      break;
-    case "headers":
-      break;
+
+export const initRabbit = async (connectionUrls: ConnectionUrl, options?: InitRabbitOptions): Promise<ChannelWrapper> => {
+  try {
+    const connection = amqp.connect(connectionUrls, options?.connectOptions);
+    const channelWrapper = connection.createChannel(options?.createChannelOptions);
+    await channelWrapper.waitForConnect();
+    return channelWrapper;
+  } catch (error: unknown) {
+    throw new Error(`Error while connecting to RabbitMQ: ${error}`);
   }
 };
 
-export const initRabbit = async (
-  serverRegister: Record<string, RouteRegister>,
-  connectionURL: string,
-  queueName: string,
-) => {
-  const connection = await connect(connectionURL);
-  const channel = await connection.createChannel();
-
-  for (const exchangeName in serverRegister) {
-    const routeRegister = serverRegister[exchangeName];
-    const exchangeType = routeRegister.exchangeType;
-    const options = routeRegister.options;
-    await channel.assertExchange(exchangeName, exchangeType, options);
-    await queueRegisterPerExchange(
-      exchangeName,
-      routeRegister,
-      channel,
-      queueName,
-    );
-  }
-};
+/*
+  TODO: 
+   * e2e tests 
+   * ZOD validation 
+   * initRabbit should accept an array of urls and string of one url
+*/
