@@ -16,6 +16,8 @@ class Server {
     options?: InitRabbitOptions,
   ): Promise<void> => {
     this.channelWrapper = await initRabbit(connectionUrls, options);
+
+    console.log('Server initialized');
   };
 
   async registerRoute(
@@ -25,16 +27,16 @@ class Server {
     handlerFunction: Handler | AckHandler,
     options?: Options.Consume,
   ): Promise<void> {
-    const onMessage = !options?.noAck
-      ? handlerFunction({
-        ack,
-        nack
-      })
-      : handlerFunction;
-
     if (!this.channelWrapper) {
       throw new Error('You have to trigger init method first');
     }
+
+    const onMessage = !options?.noAck
+      ? (handlerFunction as AckHandler)({
+        ack: this.channelWrapper.ack.bind(this.channelWrapper),
+        nack: this.channelWrapper.nack.bind(this.channelWrapper),
+      })
+      : handlerFunction as Handler;    
 
     const defaultConsumerOptions = options ?? { noAck: false };
 

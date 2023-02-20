@@ -6,7 +6,7 @@
     "build": "tsup src/index.ts --format cjs,esm --dts",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
-    "e2e": "ts-node e2e/manual-test.ts",
+    "e2e": "ts-node e2e/server-client.test.ts",
     "test": ""
   },
   "main": "dist/index.js",

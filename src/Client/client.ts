@@ -12,7 +12,7 @@ export class Client {
   public init = async (
     connectionUrls: ConnectionUrl,
     options?: InitRabbitOptions,
-  ): Promise<void> => {
+  ): Promise<void> =>  { 
     this.channelWrapper = await initRabbit(connectionUrls, options);
   };
 
