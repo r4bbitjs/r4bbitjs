@@ -4,13 +4,14 @@ env:
 extends:
   - eslint:recommended
   - plugin:@typescript-eslint/recommended
+  - prettier
 overrides: []
-parser: '@typescript-eslint/parser'
+parser: "@typescript-eslint/parser"
 parserOptions:
   ecmaVersion: latest
   sourceType: module
 plugins:
-  - '@typescript-eslint'
+  - "@typescript-eslint"
 rules:
   indent:
     - error
@@ -24,3 +25,7 @@ rules:
   semi:
     - error
     - always
+  max-len:
+    - error: true
+    - code: 80
+    - ignoreUrls: true

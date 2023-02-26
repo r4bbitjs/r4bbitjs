@@ -8,7 +8,7 @@ export class Client {
   private channelWrapper?: ChannelWrapper;
 
   public init = async (
-    connectionUrls: ConnectionUrl,
+    connectionUrls: ConnectionUrl[] | ConnectionUrl,
     options?: InitRabbitOptions,
   ): Promise<void> => {
     this.channelWrapper = await initRabbit(connectionUrls, options);
