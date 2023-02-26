@@ -14,7 +14,7 @@ export class Client {
     this.channelWrapper = await initRabbit(connectionUrls, options);
   };
 
-  public async publishMesage(
+  public async publishMessage(
     exchangeName: string,
     key: string,
     message: Buffer | string | unknown,

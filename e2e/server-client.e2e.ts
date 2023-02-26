@@ -44,7 +44,7 @@ const basicHandler = (msg: ConsumeMessage | null) => {
 
   let counter = 0;
   setInterval(async () => {
-    await client.publishMesage('exchange1', 'something.test2', 'testMessage: ' + counter.toString());
+    await client.publishMessage('exchange1', 'something.test2', 'testMessage: ' + counter.toString());
     counter++;
     console.log('sending message: ' + counter);
   }, 1000);

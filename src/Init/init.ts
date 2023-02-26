@@ -3,14 +3,6 @@ import { InitRabbitOptions } from './init.type';
 
 
 export const initRabbit = async (connectionUrls: string[] | string, options?: InitRabbitOptions): Promise<ChannelWrapper> => {
-
-  try {
-
-  } catch (error: unknown) {
-    throw new Error(`Invalid RabbitMQ connection URL: ${error}`);
-  }
-
-
   try {
     const connection = amqp.connect(connectionUrls, options?.connectOptions);
     const channelWrapper = connection.createChannel(options?.createChannelOptions);
