@@ -1,9 +1,13 @@
+const mockCreateChannel = jest.fn().mockReturnValue({
+  waitForConnect: jest.fn()
+})
+const mockConnect = jest.fn().mockReturnValue({
+  createChannel: mockCreateChannel
+});
+
+
 jest.mock('amqp-connection-manager', () => ({
-  amqp: {
-    connect: (...args: unknown[]) => {
-      console.log('amqp connection established with args:', args);
-    },
-  },
+  connect: mockConnect
 }));
 
 import { initRabbit } from './init';
@@ -18,7 +22,8 @@ describe('init function tests', () => {
     await initRabbit(connectionUrl);
 
     // then
-    expect(1).toEqual(1);
+    expect(mockConnect).toHaveBeenCalledWith(connectionUrl, undefined);
+    expect(mockCreateChannel).toHaveBeenCalledTimes(1);
   });
 
   it('should accept correct urls ', () => {

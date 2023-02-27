@@ -1,28 +1,26 @@
 import {
   Channel,
   ChannelWrapper,
-  ConnectionUrl,
+  ConnectionUrl
 } from 'amqp-connection-manager';
+import { Options } from 'amqplib';
 import { initRabbit } from '../Init/init';
 import { InitRabbitOptions } from '../Init/init.type';
 import { AckHandler, Handler } from './server.type';
-import { Options } from 'amqplib';
 
 class Server {
   private channelWrapper?: ChannelWrapper;
 
   public init = async (
-    connectionUrls: ConnectionUrl,
+    connectionUrls: ConnectionUrl | ConnectionUrl[],
     options?: InitRabbitOptions,
   ): Promise<void> => {
     this.channelWrapper = await initRabbit(connectionUrls, options);
-
-    console.log('Server initialized');
   };
 
   async registerRoute(
     queueName: string,
-    key: string,
+    routingKey: string,
     exchangeName: string,
     handlerFunction: Handler | AckHandler,
     options?: Options.Consume,
@@ -43,7 +41,7 @@ class Server {
     await this.channelWrapper.addSetup(async (channel: Channel) => {
       await channel.assertExchange(exchangeName, 'topic');
       await channel.assertQueue(queueName);
-      await channel.bindQueue(queueName, exchangeName, key);
+      await channel.bindQueue(queueName, exchangeName, routingKey);
       await channel.consume(queueName, onMessage, defaultConsumerOptions);
     });
   }
@@ -51,7 +49,7 @@ class Server {
 
 let server: Server;
 export const getServer = async (
-  connectionUrls: ConnectionUrl,
+  connectionUrls: ConnectionUrl | ConnectionUrl[],
   options?: InitRabbitOptions,
 ) => {
   if (!server) {

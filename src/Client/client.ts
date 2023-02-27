@@ -32,7 +32,7 @@ export class Client {
 
 let client: Client;
 export const getClient = async (
-  connectionUrls: ConnectionUrl,
+  connectionUrls: ConnectionUrl | ConnectionUrl[],
   options?: InitRabbitOptions,
 ) => {
   if (!client) {

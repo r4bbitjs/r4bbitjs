@@ -1,23 +1,17 @@
 import amqp, { ChannelWrapper, ConnectionUrl } from 'amqp-connection-manager';
+import { validateUri } from './connectionUrls.validator';
 import { InitRabbitOptions } from './init.type';
-import { rabbitUriSchema } from './schema/url.schema';
 
 export const initRabbit = async (
   connectionUrls: ConnectionUrl[] | ConnectionUrl,
   options?: InitRabbitOptions
 ): Promise<ChannelWrapper> => {
   try {
-    if (Array.isArray(connectionUrls)) {
-      for (const uri of connectionUrls) {
-        await rabbitUriSchema.parseAsync(uri);
-      }
-    } else {
-      await rabbitUriSchema.parseAsync(connectionUrls);
-    }
+    validateUri(connectionUrls);
   } catch (err: unknown) {
-    if (Array.isArray(err) && err[0].validation === 'regex') {
-        throw new Error('Entered uri is not in valid amqp uri format, please check https://www.rabbitmq.com/uri-spec.html')
-    }
+    throw new Error(
+      'Entered uri is not in valid amqp uri format, please check https://www.rabbitmq.com/uri-spec.html'
+    );
   }
 
   try {
@@ -31,6 +25,3 @@ export const initRabbit = async (
     throw new Error(`Error while connecting to RabbitMQ: ${error}`);
   }
 };
-
-// test if this works
-initRabbit(['amqp://[::1]', 'amqp://host/%2f', 'amqp://:10000']);

@@ -1,4 +1,5 @@
-import { ConsumeMessage } from 'amqplib';
+import { ConnectionUrl } from 'amqp-connection-manager';
+import { ConsumeMessage, Options } from 'amqplib';
 import { getClient } from '../src/Client/client';
 import { getServer } from '../src/Server/server';
 import { AckHandler } from '../src/Server/server.type';
@@ -27,10 +28,25 @@ const basicHandler = (msg: ConsumeMessage | null) => {
 
 };
 
+const localUrl = 'amqp://guest:guest@localhost:5672/';
+const objectUrl = {
+  url: 'amqp://guest:guest@localhost:5672/v1',
+}
+const objectUrl2: Options.Connect = {
+  username: 'guest',
+  password: 'guest',
+  hostname: 'localhost',
+  port: 5672,
+  vhost: 'v2',
+  locale: 'en_US',
+  frameMax: 0x1000,
+  heartbeat: 0,
+}
 
-(async () => {
-  const server = await getServer('amqp://localhost');
-  const client = await getClient('amqp://localhost');
+
+const checkMessagesDispatch = async (url: ConnectionUrl | ConnectionUrl[]) => {
+  const server = await getServer(url);
+  const client = await getClient(url);
 
   for (const obj of testReadyObjects) {
     await server.registerRoute(
@@ -48,6 +64,13 @@ const basicHandler = (msg: ConsumeMessage | null) => {
     counter++;
     console.log('sending message: ' + counter);
   }, 1000);
+}
 
+(async () => {
+  const connectionObjects = ['amqp://localhost', localUrl, objectUrl, objectUrl2];
+
+  for (const connectionObject of connectionObjects) {
+    await checkMessagesDispatch(connectionObject);
+  }
 })();
 
