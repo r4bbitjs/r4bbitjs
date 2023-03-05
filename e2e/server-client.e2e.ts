@@ -25,7 +25,6 @@ const basicHandler = (msg: ConsumeMessage | null) => {
   if (!msg) return;
 
   console.log(msg.content.toString());
-
 };
 
 const localUrl = 'amqp://guest:guest@localhost:5672/';
@@ -69,8 +68,10 @@ const checkMessagesDispatch = async (url: ConnectionUrl | ConnectionUrl[]) => {
 (async () => {
   const connectionObjects = ['amqp://localhost', localUrl, objectUrl, objectUrl2];
 
-  for (const connectionObject of connectionObjects) {
-    await checkMessagesDispatch(connectionObject);
-  }
+  // for (const connectionObject of connectionObjects) {
+  //   await checkMessagesDispatch(connectionObject);
+  // }
+
+  await checkMessagesDispatch(['amqp://localhost', localUrl, objectUrl]);
 })();
 
