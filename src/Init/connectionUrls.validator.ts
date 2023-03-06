@@ -57,7 +57,7 @@ const getUrl = (connectionUrl: ConnectionUrl) => {
 const getUrlFlatList = (connectionUrls: ConnectionUrl[] | ConnectionUrl) => {  
   return Array.isArray(connectionUrls)
     ? connectionUrls.map((url) => getUrl(url))
-    : getUrl(connectionUrls);
+    : [getUrl(connectionUrls)];
 };
 
 export const validateUri = async (
