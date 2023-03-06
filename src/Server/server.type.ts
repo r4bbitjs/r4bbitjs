@@ -10,3 +10,7 @@ export type AckObj = {
 };
 
 export type AckHandler = (ackObj: AckObj) => Handler;
+
+
+export type Reply = (replyMessage: any, msg: ConsumeMessage) => Promise<void>;
+export type RpcHandler = (reply: Reply) => Handler;
