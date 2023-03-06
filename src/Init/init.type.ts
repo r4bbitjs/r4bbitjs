@@ -1,6 +1,10 @@
-import { AmqpConnectionManagerOptions, CreateChannelOpts } from 'amqp-connection-manager';
+import {
+    AmqpConnectionManagerOptions,
+    CreateChannelOpts
+} from 'amqp-connection-manager';
 
 export type InitRabbitOptions = {
-    connectOptions?: AmqpConnectionManagerOptions;
-    createChannelOptions?: CreateChannelOpts;
-}
+  connectOptions?: AmqpConnectionManagerOptions;
+  createChannelOptions?: CreateChannelOpts;
+};
+

@@ -6,8 +6,12 @@
     "outDir": "./dist",
     "skipLibCheck": true,
     "strict": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "e2e/**/*"
   ]
 }

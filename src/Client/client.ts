@@ -1,7 +1,5 @@
 import {
-  ConnectionUrl,
-  ChannelWrapper,
-  Options,
+  ChannelWrapper, ConnectionUrl, Options
 } from 'amqp-connection-manager';
 import { initRabbit } from '../Init/init';
 import { InitRabbitOptions } from '../Init/init.type';
@@ -10,13 +8,13 @@ export class Client {
   private channelWrapper?: ChannelWrapper;
 
   public init = async (
-    connectionUrls: ConnectionUrl,
+    connectionUrls: ConnectionUrl[] | ConnectionUrl,
     options?: InitRabbitOptions,
-  ): Promise<void> =>  { 
+  ): Promise<void> => {
     this.channelWrapper = await initRabbit(connectionUrls, options);
   };
 
-  public async publishMesage(
+  public async publishMessage(
     exchangeName: string,
     key: string,
     message: Buffer | string | unknown,
@@ -26,7 +24,7 @@ export class Client {
       throw new Error('You have to trigger init method first');
     }
 
-    const defaultOptions = options ?? { persistent: true};
+    const defaultOptions = options ?? { persistent: true };
 
     await this.channelWrapper.publish(exchangeName, key, message, defaultOptions);
   }
@@ -34,7 +32,7 @@ export class Client {
 
 let client: Client;
 export const getClient = async (
-  connectionUrls: ConnectionUrl,
+  connectionUrls: ConnectionUrl | ConnectionUrl[],
   options?: InitRabbitOptions,
 ) => {
   if (!client) {
