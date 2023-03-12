@@ -5,6 +5,7 @@ specifiers:
   '@types/amqplib': ^0.10.1
   '@types/jest': ^29.4.0
   '@types/node': ^18.14.0
+  '@types/uuid': ^9.0.1
   '@typescript-eslint/eslint-plugin': ^5.51.0
   '@typescript-eslint/parser': ^5.51.0
   amqp-connection-manager: ^4.1.10
@@ -19,11 +20,13 @@ specifiers:
   ts-node: ^10.9.1
   tsup: ^6.6.0
   typescript: ^4.9.5
+  uuid: ^9.0.0
   zod: ^3.20.6
 
 dependencies:
   amqp-connection-manager: 4.1.10_amqplib@0.10.3
   nodemon: 2.0.20
+  uuid: 9.0.0
   zod: 3.20.6
 
 devDependencies:
@@ -31,6 +34,7 @@ devDependencies:
   '@types/amqplib': 0.10.1
   '@types/jest': 29.4.0
   '@types/node': 18.14.0
+  '@types/uuid': 9.0.1
   '@typescript-eslint/eslint-plugin': 5.51.0_b635kmla6dsb4frxfihkw4m47e
   '@typescript-eslint/parser': 5.51.0_4vsywjlpuriuw3tl5oq6zy5a64
   amqplib: 0.10.3
@@ -1281,6 +1285,10 @@ packages:
 
   /@types/stack-utils/2.0.1:
     resolution: {integrity: sha512-Hl219/BT5fLAaz6NDkSuhzasy49dwQS/DSdu4MdggFB8zcXv7vflBI3xp7FEmkmdDkBUI2bPUNeMttp2knYdxw==}
+    dev: true
+
+  /@types/uuid/9.0.1:
+    resolution: {integrity: sha512-rFT3ak0/2trgvp4yYZo5iKFEPsET7vKydKF+VRCxlQ9bpheehyAJH89dAkaLEq/j/RZXJIqcgsmPJKUP1Z28HA==}
     dev: true
 
   /@types/yargs-parser/21.0.0:
@@ -4660,6 +4668,11 @@ packages:
     dependencies:
       querystringify: 2.2.0
       requires-port: 1.0.0
+
+  /uuid/9.0.0:
+    resolution: {integrity: sha512-MXcSTerfPa4uqyzStbRoTgt5XIe3x5+42+q1sDuy3R5MDk66URdLMOZe5aPX/SQd+kuYAh0FdP/pO28IkQyTeg==}
+    hasBin: true
+    dev: false
 
   /v8-compile-cache-lib/3.0.1:
     resolution: {integrity: sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==}

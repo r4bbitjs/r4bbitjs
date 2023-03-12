@@ -79,7 +79,7 @@ class Server {
       await channel.assertExchange(exchangeName, 'topic');
       await channel.assertQueue(queueName);
       await channel.bindQueue(queueName, exchangeName, routingKey);
-      await channel.consume(queueName, handlerFunction(reply));
+      await channel.consume(queueName, handlerFunction(reply), options);
     });
   }
 }
