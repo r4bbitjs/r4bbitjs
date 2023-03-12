@@ -7,6 +7,7 @@
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "e2e": "ts-node ./e2e/server-client.e2e.ts",
+    "e2e-rabbit": "ts-node ./e2e/rpc.e2e.ts",
     "test": "jest",
     "initRabbit": "ts-node ./src/Init/init.ts"
   },
@@ -38,7 +39,9 @@
   },
   "dependencies": {
     "amqp-connection-manager": "^4.1.10",
+    "events": "^3.3.0",
     "nodemon": "^2.0.20",
+    "rxjs": "^7.8.0",
     "uuid": "^9.0.0",
     "zod": "^3.20.6"
   },

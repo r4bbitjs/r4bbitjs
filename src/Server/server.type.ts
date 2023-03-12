@@ -11,6 +11,7 @@ export type AckObj = {
 
 export type AckHandler = (ackObj: AckObj) => Handler;
 
-
+// A function used in RPC process that let user send a response of an RPC method to a queue
+// for implementation check registerRPCRoute in server.ts
 export type Reply = (replyMessage: any, msg: ConsumeMessage) => Promise<void>;
 export type RpcHandler = (reply: Reply) => Handler;

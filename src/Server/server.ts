@@ -7,6 +7,7 @@ import { Options } from 'amqplib';
 import { initRabbit } from '../Init/init';
 import { InitRabbitOptions } from '../Init/init.type';
 import { AckHandler, Handler, Reply, RpcHandler } from './server.type';
+import { ConsumeMessage } from 'amqplib';
 
 class Server {
   private channelWrapper?: ChannelWrapper;
@@ -47,9 +48,9 @@ class Server {
   }
 
   async registerRPCRoute(
-    queueName: string,
-    routingKey: string,
     exchangeName: string,
+    routingKey: string,
+    queueName: string,
     handlerFunction: RpcHandler,
     options?: Options.Consume
   ): Promise<void> {
@@ -57,22 +58,21 @@ class Server {
       throw new Error('You have to trigger init method first');
     }
 
-    const reply: Reply = async (replyMessage, consumedMessage) => {
+    const reply: Reply = async (replyMessage: any, consumedMessage: ConsumeMessage) => {
       if (!this.channelWrapper) {
         throw new Error('You have to trigger init method first');
       }
-
       const { replyTo, correlationId } = consumedMessage.properties;
-
+      
       await this.channelWrapper.sendToQueue(
         replyTo,
         Buffer.from(replyMessage),
         {
           correlationId,
         }
-      );
-
-      this.channelWrapper.ack.call(this.channelWrapper, consumedMessage);
+        );
+        
+        this.channelWrapper.ack.call(this.channelWrapper, consumedMessage);
     };
 
     await this.channelWrapper.addSetup(async (channel: Channel) => {

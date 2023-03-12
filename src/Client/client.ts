@@ -1,6 +1,8 @@
 import { Channel, ChannelWrapper, ConnectionUrl, Options } from 'amqp-connection-manager';
 import { ConsumeMessage } from 'amqplib';
 import { v4 as uuidv4 } from 'uuid';
+import {EventEmitter} from 'events'
+import { Observable } from 'rxjs';
 
 import { initRabbit } from '../Init/init';
 import { InitRabbitOptions } from '../Init/init.type';
@@ -10,6 +12,7 @@ const REPLY_QUEUE = 'amq.rabbitmq.reply-to';
 
 export class Client {
   private channelWrapper?: ChannelWrapper;
+  private eventEmitter = new EventEmitter();
 
   public init = async (
     connectionUrls: ConnectionUrl[] | ConnectionUrl,
@@ -20,7 +23,7 @@ export class Client {
 
   public async publishMessage(
     exchangeName: string,
-    key: string,
+    routingKey: string,
     message: Buffer | string | unknown,
     options?: Options.Publish,
   ) {
@@ -30,41 +33,56 @@ export class Client {
 
     const defaultOptions = options ?? { persistent: true };
 
-    await this.channelWrapper.publish(exchangeName, key, message, defaultOptions);
+    await this.channelWrapper.publish(exchangeName, routingKey, message, defaultOptions);
   }
 
   public async publishRPCMessage(
     exchangeName: string,
-    key: string,
     message: Buffer | string | unknown,
+    routingKey: string,
+    replyQueueName: string,
     options?: Options.Publish,
-    queueName: string = uuidv4()
   ) {
     if (!this.channelWrapper) {
       throw new Error('You have to trigger init method first');
     }
 
     const defaultOptions = options ?? { persistent: true };
+    // consumer for RPC messages' responses
 
-    const correlationId = 5;
-
+    const prefixedReplyQueueName = `reply.${replyQueueName}`
+    
     const clientConsumeFunction = (msg: ConsumeMessage | null) => {
-      if (msg?.properties.correlationId !== 'A') {
-        return;
-      }
-      if ()
-
-
-      
+      this.eventEmitter.emit(msg?.properties.correlationId, msg);
     }
-
+    
     await this.channelWrapper.addSetup(async (channel: Channel) => {
-      await channel.assertQueue(queueName);
-      await channel.bindQueue(queueName, exchangeName, routingKey);
-      await channel.consume(queueName, clientConsumeFunction, options);
+      await channel.assertQueue(prefixedReplyQueueName);
+      await channel.consume(prefixedReplyQueueName, clientConsumeFunction, options);
     });
 
-    await this.channelWrapper.publish(exchangeName, key, message, defaultOptions);
+
+    // create a promise that resolves when an event is cautch 
+    // TODO: create a util with Promise with a timeout 
+    // TODO: maybe use a timeout option in amqp wrapper lib
+    return new Promise(async (resolve, reject) => {
+      const corelationId = uuidv4();
+      this.eventEmitter.once(String(corelationId), (msg) => {
+        resolve(msg);
+      });
+      if (!this.channelWrapper) {
+        throw new Error('You have to trigger init method first');
+      }
+
+      setTimeout(() => {
+        reject('timeout');
+      }, 30_000);
+      await this.channelWrapper.publish(exchangeName, routingKey, message, {
+        ...defaultOptions,
+        replyTo: prefixedReplyQueueName,
+        correlationId: corelationId
+      });
+    });
   }
 }
 
