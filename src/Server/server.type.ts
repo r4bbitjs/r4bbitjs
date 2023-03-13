@@ -15,3 +15,9 @@ export type AckHandler = (ackObj: AckObj) => Handler;
 // for implementation check registerRPCRoute in server.ts
 export type Reply = (replyMessage: any, msg: ConsumeMessage) => Promise<void>;
 export type RpcHandler = (reply: Reply) => Handler;
+
+export type ServerConnection = {
+  queueName: string;
+  routingKey: string;
+  exchangeName: string;
+}

@@ -1,14 +1,16 @@
-import { Channel, ChannelWrapper, ConnectionUrl, Options } from 'amqp-connection-manager';
+import {
+  Channel,
+  ChannelWrapper,
+  ConnectionUrl,
+  Options
+} from 'amqp-connection-manager';
 import { ConsumeMessage } from 'amqplib';
+import { EventEmitter } from 'events';
 import { v4 as uuidv4 } from 'uuid';
-import {EventEmitter} from 'events'
-import { Observable } from 'rxjs';
 
 import { initRabbit } from '../Init/init';
 import { InitRabbitOptions } from '../Init/init.type';
-
-const REPLY_QUEUE = 'amq.rabbitmq.reply-to';
-
+import { ClientConnection, ClientConnectionRPC } from './client.type';
 
 export class Client {
   private channelWrapper?: ChannelWrapper;
@@ -16,54 +18,68 @@ export class Client {
 
   public init = async (
     connectionUrls: ConnectionUrl[] | ConnectionUrl,
-    options?: InitRabbitOptions,
+    options?: InitRabbitOptions
   ): Promise<void> => {
     this.channelWrapper = await initRabbit(connectionUrls, options);
   };
 
   public async publishMessage(
-    exchangeName: string,
-    routingKey: string,
+    connection: ClientConnection,
     message: Buffer | string | unknown,
-    options?: Options.Publish,
+    options?: Options.Publish
   ) {
     if (!this.channelWrapper) {
       throw new Error('You have to trigger init method first');
     }
+
+    const {exchangeName, routingKey} = connection;
 
     const defaultOptions = options ?? { persistent: true };
 
-    await this.channelWrapper.publish(exchangeName, routingKey, message, defaultOptions);
+    await this.channelWrapper.publish(
+      exchangeName,
+      routingKey,
+      message,
+      defaultOptions
+    );
   }
 
   public async publishRPCMessage(
-    exchangeName: string,
     message: Buffer | string | unknown,
-    routingKey: string,
-    replyQueueName: string,
-    options?: Options.Publish,
+    clientConnection: ClientConnectionRPC,
+    options?: Options.Publish
   ) {
     if (!this.channelWrapper) {
       throw new Error('You have to trigger init method first');
     }
+
+    let defaultReplyExhangeName: string;
+    const {exchangeName, replyExchangeName, replyQueueName, routingKey} = clientConnection;
+
+    defaultReplyExhangeName = replyExchangeName ?? "reply-exchange";
 
     const defaultOptions = options ?? { persistent: true };
     // consumer for RPC messages' responses
 
-    const prefixedReplyQueueName = `reply.${replyQueueName}`
-    
+    const prefixedReplyQueueName = `reply.${replyQueueName}`;
+
+    const defaultReplyExchange = 'reply-exchange';
+
     const clientConsumeFunction = (msg: ConsumeMessage | null) => {
       this.eventEmitter.emit(msg?.properties.correlationId, msg);
-    }
-    
+    };
+
     await this.channelWrapper.addSetup(async (channel: Channel) => {
       await channel.assertQueue(prefixedReplyQueueName);
-      await channel.consume(prefixedReplyQueueName, clientConsumeFunction, options);
+      await channel.consume(
+        prefixedReplyQueueName,
+        clientConsumeFunction,
+        options
+      );
     });
 
-
-    // create a promise that resolves when an event is cautch 
-    // TODO: create a util with Promise with a timeout 
+    // create a promise that resolves when an event is cautch
+    // TODO: create a util with Promise with a timeout
     // TODO: maybe use a timeout option in amqp wrapper lib
     return new Promise(async (resolve, reject) => {
       const corelationId = uuidv4();
@@ -80,7 +96,10 @@ export class Client {
       await this.channelWrapper.publish(exchangeName, routingKey, message, {
         ...defaultOptions,
         replyTo: prefixedReplyQueueName,
-        correlationId: corelationId
+        correlationId: corelationId,
+        headers: {
+          replyExchangeName: defaultReplyExhangeName
+        }
       });
     });
   }
@@ -89,7 +108,7 @@ export class Client {
 let client: Client;
 export const getClient = async (
   connectionUrls: ConnectionUrl | ConnectionUrl[],
-  options?: InitRabbitOptions,
+  options?: InitRabbitOptions
 ) => {
   if (!client) {
     client = new Client();

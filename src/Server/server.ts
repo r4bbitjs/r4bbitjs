@@ -3,11 +3,10 @@ import {
   ChannelWrapper,
   ConnectionUrl
 } from 'amqp-connection-manager';
-import { Options } from 'amqplib';
+import { ConsumeMessage, Options } from 'amqplib';
 import { initRabbit } from '../Init/init';
 import { InitRabbitOptions } from '../Init/init.type';
-import { AckHandler, Handler, Reply, RpcHandler } from './server.type';
-import { ConsumeMessage } from 'amqplib';
+import { AckHandler, Handler, Reply, RpcHandler, ServerConnection } from './server.type';
 
 class Server {
   private channelWrapper?: ChannelWrapper;
@@ -20,15 +19,15 @@ class Server {
   };
 
   async registerRoute(
-    queueName: string,
-    routingKey: string,
-    exchangeName: string,
+    connection: ServerConnection,
     handlerFunction: Handler | AckHandler,
     options?: Options.Consume
   ): Promise<void> {
     if (!this.channelWrapper) {
       throw new Error('You have to trigger init method first');
     }
+
+    const {exchangeName, queueName, routingKey} = connection;
 
     const onMessage = !options?.noAck
       ? (handlerFunction as AckHandler)({
@@ -47,10 +46,9 @@ class Server {
     });
   }
 
+
   async registerRPCRoute(
-    exchangeName: string,
-    routingKey: string,
-    queueName: string,
+    connection: ServerConnection,
     handlerFunction: RpcHandler,
     options?: Options.Consume
   ): Promise<void> {
@@ -58,12 +56,19 @@ class Server {
       throw new Error('You have to trigger init method first');
     }
 
+    const {exchangeName, queueName, routingKey} = connection;
+
     const reply: Reply = async (replyMessage: any, consumedMessage: ConsumeMessage) => {
       if (!this.channelWrapper) {
         throw new Error('You have to trigger init method first');
       }
-      const { replyTo, correlationId } = consumedMessage.properties;
+      const { replyTo, correlationId, headers: { replyExchangeName } } = consumedMessage.properties;
       
+      await this.channelWrapper.assertExchange(replyExchangeName, 'direct');
+      await this.channelWrapper.publish(replyExchangeName, )
+      
+this.channelWrapper.
+
       await this.channelWrapper.sendToQueue(
         replyTo,
         Buffer.from(replyMessage),
