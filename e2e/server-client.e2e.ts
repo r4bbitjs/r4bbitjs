@@ -49,9 +49,11 @@ const checkMessagesDispatch = async (url: ConnectionUrl | ConnectionUrl[]) => {
 
   for (const obj of testReadyObjects) {
     await server.registerRoute(
-      obj.queueName,
-      obj.key,
-      obj.exchangeName,
+      {
+        queueName: obj.queueName,
+        exchangeName: obj.exchangeName,
+        routingKey: obj.key
+      },
       handlerFunc,
       { noAck: false }
     );
@@ -59,7 +61,7 @@ const checkMessagesDispatch = async (url: ConnectionUrl | ConnectionUrl[]) => {
 
   let counter = 0;
   setInterval(async () => {
-    await client.publishMessage('exchange1', 'something.test2', 'testMessage: ' + counter.toString());
+    await client.publishMessage({ exchangeName: 'exchange1', routingKey: 'something.test2' }, 'testMessage: ' + counter.toString());
     counter++;
     console.log('sending message: ' + counter);
   }, 1000);
