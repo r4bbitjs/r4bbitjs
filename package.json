@@ -8,6 +8,8 @@
     "lint:fix": "eslint src --ext .ts --fix",
     "e2e": "ts-node ./e2e/server-client.e2e.ts",
     "e2e-rabbit": "ts-node ./e2e/rpc.e2e.ts",
+    "e2e-experimental-rabbit": "ts-node ./e2e/rpc-experimental.e2e.ts",
+    "e2e-experimental-rabbit-debug": "ts-node ./e2e/rpc-experimental.e2e.ts --inspect",
     "test": "jest",
     "initRabbit": "ts-node ./src/Init/init.ts"
   },

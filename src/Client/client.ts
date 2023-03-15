@@ -71,9 +71,6 @@ export class Client {
       );
     });
 
-    // create a promise that resolves when an event is cautch
-    // TODO: create a util with Promise with a timeout
-    // TODO: maybe use a timeout option in amqp wrapper lib
     return new Promise(async (resolve, reject) => {
       const corelationId = uuidv4();
       this.eventEmitter.once(String(corelationId), (msg) => {
@@ -86,6 +83,7 @@ export class Client {
       setTimeout(() => {
         reject('timeout');
       }, 30_000);
+      console.log('publishing the message', message);
       await this.channelWrapper.publish(exchangeName, routingKey, message, {
         ...defaultOptions,
         replyTo: prefixedReplyQueueName,
