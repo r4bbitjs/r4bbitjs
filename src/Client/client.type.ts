@@ -7,5 +7,4 @@ export type ClientConnectionRPC = {
     exchangeName: string;
     routingKey: string;
     replyQueueName: string;
-    replyExchangeName?: string;
 }

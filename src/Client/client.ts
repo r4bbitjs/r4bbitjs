@@ -32,7 +32,7 @@ export class Client {
       throw new Error('You have to trigger init method first');
     }
 
-    const {exchangeName, routingKey} = connection;
+    const { exchangeName, routingKey } = connection;
 
     const defaultOptions = options ?? { persistent: true };
 
@@ -53,17 +53,9 @@ export class Client {
       throw new Error('You have to trigger init method first');
     }
 
-    let defaultReplyExhangeName: string;
-    const {exchangeName, replyExchangeName, replyQueueName, routingKey} = clientConnection;
-
-    defaultReplyExhangeName = replyExchangeName ?? "reply-exchange";
-
+    const { exchangeName, replyQueueName, routingKey } = clientConnection;
     const defaultOptions = options ?? { persistent: true };
-    // consumer for RPC messages' responses
-
     const prefixedReplyQueueName = `reply.${replyQueueName}`;
-
-    const defaultReplyExchange = 'reply-exchange';
 
     const clientConsumeFunction = (msg: ConsumeMessage | null) => {
       this.eventEmitter.emit(msg?.properties.correlationId, msg);
@@ -71,6 +63,7 @@ export class Client {
 
     await this.channelWrapper.addSetup(async (channel: Channel) => {
       await channel.assertQueue(prefixedReplyQueueName);
+      await channel.bindQueue(prefixedReplyQueueName, exchangeName, prefixedReplyQueueName);
       await channel.consume(
         prefixedReplyQueueName,
         clientConsumeFunction,
@@ -97,9 +90,6 @@ export class Client {
         ...defaultOptions,
         replyTo: prefixedReplyQueueName,
         correlationId: corelationId,
-        headers: {
-          replyExchangeName: defaultReplyExhangeName
-        }
       });
     });
   }

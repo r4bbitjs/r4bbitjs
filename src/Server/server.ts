@@ -62,22 +62,13 @@ class Server {
       if (!this.channelWrapper) {
         throw new Error('You have to trigger init method first');
       }
-      const { replyTo, correlationId, headers: { replyExchangeName } } = consumedMessage.properties;
-      
-      await this.channelWrapper.assertExchange(replyExchangeName, 'direct');
-      await this.channelWrapper.publish(replyExchangeName, )
-      
-this.channelWrapper.
+      const { replyTo, correlationId } = consumedMessage.properties;
 
-      await this.channelWrapper.sendToQueue(
-        replyTo,
-        Buffer.from(replyMessage),
-        {
-          correlationId,
-        }
-        );
+      await this.channelWrapper.publish(exchangeName, replyTo, Buffer.from(replyMessage), {
+        correlationId,
+      });
         
-        this.channelWrapper.ack.call(this.channelWrapper, consumedMessage);
+      this.channelWrapper.ack.call(this.channelWrapper, consumedMessage);
     };
 
     await this.channelWrapper.addSetup(async (channel: Channel) => {
