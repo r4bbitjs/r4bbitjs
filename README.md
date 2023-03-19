@@ -1,6 +1,6 @@
 # Rabbit-Wrapper
 # TODO: 
-   * Giving user the option in the publish message to automatically encode decode to the JSON format.
+   * Refactor server and the client (decoding / encoding messages)
    * Generics to the rpc call
    * Write auto ack for client consume
    * reply exchange different then default and as an option accepting exchange 

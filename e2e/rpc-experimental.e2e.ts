@@ -1,6 +1,5 @@
 import { getClient } from '../src/Client/client';
 import { getServer } from '../src/Server/server';
-import { ConsumeMessage } from 'amqplib';
 import { Reply, RpcHandler } from '../src/Server/server.type';
 
 const localUrl = 'amqp://guest:guest@localhost:5672/';
@@ -10,14 +9,12 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
   const client = await getClient(localUrl);
 
   const handler: RpcHandler =
-    (reply: Reply) => (msg: ConsumeMessage | null) => {
+    (reply: Reply) => (decoded: Record<string, unknown>) => {
       const processingTime = 500;
       setTimeout(async () => {
-        if (!msg) {
-          return;
-        }
-        // var message = JSON.parse(msg.content.toString());
-        await reply(message, msg);
+        console.log("Decoded: ", decoded);
+
+        await reply({test: "Test"});
       }, processingTime);
     };
 
@@ -43,13 +40,9 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
         routingKey,
         replyQueueName,
       },
-      { contentType: 'application/json', persistent: true }
+      { contentType: 'application/json', persistent: true, headers: {accept: "application/json"} }
     );
 
     console.log('response', response);
-    console.log(
-      'content',
-      (response as { content: string }).content.toString()
-    );
   }, 5000);
 })();

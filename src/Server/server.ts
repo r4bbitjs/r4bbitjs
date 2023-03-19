@@ -6,7 +6,7 @@ import {
 import { ConsumeMessage, Options } from 'amqplib';
 import { initRabbit } from '../Init/init';
 import { InitRabbitOptions } from '../Init/init.type';
-import { AckHandler, Handler, Reply, RpcHandler, ServerConnection } from './server.type';
+import { AckHandler, Handler, RpcHandler, ServerConnection } from './server.type';
 
 class Server {
   private channelWrapper?: ChannelWrapper;
@@ -17,6 +17,14 @@ class Server {
   ): Promise<void> => {
     this.channelWrapper = await initRabbit(connectionUrls, options);
   };
+
+  public decodeMessage(message: string, contentType: string | undefined) {
+    if (contentType === 'application/json') {
+      return JSON.parse(message);
+    }
+
+    return message;
+  }
 
   async registerRoute(
     connection: ServerConnection,
@@ -46,7 +54,6 @@ class Server {
     });
   }
 
-
   async registerRPCRoute(
     connection: ServerConnection,
     handlerFunction: RpcHandler,
@@ -58,14 +65,20 @@ class Server {
 
     const {exchangeName, queueName, routingKey} = connection;
 
-    const reply: Reply = async (replyMessage: any, consumedMessage: ConsumeMessage) => {
+    const reply = (consumedMessage: ConsumeMessage | null) => async (replyMessage: Record<string, unknown>) => {
       if (!this.channelWrapper) {
         throw new Error('You have to trigger init method first');
       }
+      
+      if (!consumedMessage){
+        throw new Error('Consume message cannot be null');
+      }
+
       const { replyTo, correlationId } = consumedMessage.properties;
 
-      await this.channelWrapper.publish(exchangeName, replyTo, Buffer.from(replyMessage), {
+      await this.channelWrapper.publish(exchangeName, replyTo, Buffer.from(JSON.stringify(replyMessage)), {
         correlationId,
+        contentType: consumedMessage.properties.headers.accept
       });
         
       this.channelWrapper.ack.call(this.channelWrapper, consumedMessage);
@@ -75,7 +88,10 @@ class Server {
       await channel.assertExchange(exchangeName, 'topic');
       await channel.assertQueue(queueName);
       await channel.bindQueue(queueName, exchangeName, routingKey);
-      await channel.consume(queueName, handlerFunction(reply), options);
+      await channel.consume(queueName, consumeMessage => {
+        const decoded = this.decodeMessage((consumeMessage?.content as Buffer).toString(), consumeMessage?.properties.contentType);
+        return handlerFunction(reply(consumeMessage))(decoded);
+      }, options);
     });
   }
 }

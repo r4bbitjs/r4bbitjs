@@ -1,6 +1,5 @@
 import { getClient } from '../src/Client/client';
 import { getServer } from '../src/Server/server';
-import { ConsumeMessage } from 'amqplib';
 import { Reply, RpcHandler } from '../src/Server/server.type';
 
 const localUrl = 'amqp://guest:guest@localhost:5672/';
@@ -10,13 +9,13 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
   const client = await getClient(localUrl);
 
   const handler: RpcHandler =
-    (reply: Reply) => (msg: ConsumeMessage | null) => {
+    (reply: Reply) => (msg: Record<string, unknown>) => {
       const processingTime = 500;
       setTimeout(async () => {
         if (!msg) {
           return;
         }
-        await reply('our-reply', msg);
+        await reply({test: "test"});
       }, processingTime);
     };
 

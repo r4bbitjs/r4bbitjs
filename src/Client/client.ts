@@ -23,10 +23,18 @@ export class Client {
     this.channelWrapper = await initRabbit(connectionUrls, options);
   };
 
+  public decodeMessage(message: string, contentType: string | undefined) {
+    if (contentType === 'application/json') {
+      return JSON.parse(message);
+    }
+
+    return message;
+  }
+
   public async publishMessage(
     connection: ClientConnection,
     message: Buffer | string | unknown,
-    options?: Options.Publish
+    options?: Options.Publish //  contentType
   ) {
     if (!this.channelWrapper) {
       throw new Error('You have to trigger init method first');
@@ -58,7 +66,9 @@ export class Client {
     const prefixedReplyQueueName = `reply.${replyQueueName}`;
 
     const clientConsumeFunction = (msg: ConsumeMessage | null) => {
-      this.eventEmitter.emit(msg?.properties.correlationId, msg);
+      const decoded = this.decodeMessage((msg?.content as Buffer).toString(), msg?.properties.contentType);
+      this.eventEmitter.emit(msg?.properties.correlationId, decoded);
+
     };
 
     await this.channelWrapper.addSetup(async (channel: Channel) => {
@@ -83,7 +93,6 @@ export class Client {
       setTimeout(() => {
         reject('timeout');
       }, 30_000);
-      console.log('publishing the message', message);
       await this.channelWrapper.publish(exchangeName, routingKey, message, {
         ...defaultOptions,
         replyTo: prefixedReplyQueueName,
