@@ -2,7 +2,7 @@ import {
   Channel,
   ChannelWrapper,
   ConnectionUrl,
-  Options
+  Options,
 } from 'amqp-connection-manager';
 import { ConsumeMessage } from 'amqplib';
 import { EventEmitter } from 'events';
@@ -10,7 +10,12 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { initRabbit } from '../Init/init';
 import { InitRabbitOptions } from '../Init/init.type';
-import { ClientConnection, ClientConnectionRPC } from './client.type';
+import {
+  ClientConnection,
+  ClientConnectionRPC,
+  ClientRPCOptions,
+} from './client.type';
+import { encodeMessage } from '../Common/encodeMessage';
 
 export class Client {
   private channelWrapper?: ChannelWrapper;
@@ -31,10 +36,24 @@ export class Client {
     return message;
   }
 
+  public prepareOptions(options?: ClientRPCOptions): Options.Publish {
+    const defaultOptions = { persistent: true };
+    const defaultMsgType = 'json';
+
+    return {
+      ...defaultOptions,
+      ...options?.amqpOptions,
+      headers: {
+        'x-send-type': options?.sendType ?? defaultMsgType,
+        'x-receive-type': options?.receiveType ?? defaultMsgType,
+      },
+    };
+  }
+
   public async publishMessage(
     connection: ClientConnection,
     message: Buffer | string | unknown,
-    options?: Options.Publish //  contentType
+    options?: ClientRPCOptions
   ) {
     if (!this.channelWrapper) {
       throw new Error('You have to trigger init method first');
@@ -42,42 +61,45 @@ export class Client {
 
     const { exchangeName, routingKey } = connection;
 
-    const defaultOptions = options ?? { persistent: true };
-
     await this.channelWrapper.publish(
       exchangeName,
       routingKey,
-      message,
-      defaultOptions
+      encodeMessage(message, options?.sendType),
+      this.prepareOptions(options)
     );
   }
 
   public async publishRPCMessage(
     message: Buffer | string | unknown,
     clientConnection: ClientConnectionRPC,
-    options?: Options.Publish
+    options?: ClientRPCOptions
   ) {
     if (!this.channelWrapper) {
       throw new Error('You have to trigger init method first');
     }
 
     const { exchangeName, replyQueueName, routingKey } = clientConnection;
-    const defaultOptions = options ?? { persistent: true };
     const prefixedReplyQueueName = `reply.${replyQueueName}`;
 
     const clientConsumeFunction = (msg: ConsumeMessage | null) => {
-      const decoded = this.decodeMessage((msg?.content as Buffer).toString(), msg?.properties.contentType);
+      const decoded = this.decodeMessage(
+        (msg?.content as Buffer).toString(),
+        msg?.properties.contentType
+      );
       this.eventEmitter.emit(msg?.properties.correlationId, decoded);
-
     };
 
     await this.channelWrapper.addSetup(async (channel: Channel) => {
       await channel.assertQueue(prefixedReplyQueueName);
-      await channel.bindQueue(prefixedReplyQueueName, exchangeName, prefixedReplyQueueName);
+      await channel.bindQueue(
+        prefixedReplyQueueName,
+        exchangeName,
+        prefixedReplyQueueName
+      );
       await channel.consume(
         prefixedReplyQueueName,
         clientConsumeFunction,
-        options
+        this.prepareOptions(options)
       );
     });
 
@@ -93,11 +115,16 @@ export class Client {
       setTimeout(() => {
         reject('timeout');
       }, 30_000);
-      await this.channelWrapper.publish(exchangeName, routingKey, message, {
-        ...defaultOptions,
-        replyTo: prefixedReplyQueueName,
-        correlationId: corelationId,
-      });
+      await this.channelWrapper.publish(
+        exchangeName,
+        routingKey,
+        encodeMessage(message, options?.sendType),
+        {
+          ...this.prepareOptions(options),
+          replyTo: prefixedReplyQueueName,
+          correlationId: corelationId,
+        }
+      );
     });
   }
 }

@@ -7,6 +7,8 @@ import { ConsumeMessage, Options } from 'amqplib';
 import { initRabbit } from '../Init/init';
 import { InitRabbitOptions } from '../Init/init.type';
 import { AckHandler, Handler, RpcHandler, ServerConnection } from './server.type';
+import { encodeMessage } from '../Common/encodeMessage';
+import { MessageType } from '../Common/types';
 
 class Server {
   private channelWrapper?: ChannelWrapper;
@@ -18,12 +20,22 @@ class Server {
     this.channelWrapper = await initRabbit(connectionUrls, options);
   };
 
-  public decodeMessage(message: string, contentType: string | undefined) {
-    if (contentType === 'application/json') {
-      return JSON.parse(message);
-    }
+  public decodeMessage(consumeMessage: ConsumeMessage | null) {
+    // After zod validation be sure that it is string and MessageType
+    const content = consumeMessage?.content.toString() as string;
+    const sendType = consumeMessage?.properties.headers['x-send-type'] as MessageType;
 
-    return message;
+    // TODO: Zod Validation
+    switch (sendType) {
+      case 'json':
+        return JSON.parse(content);
+      case 'string':
+        return content;
+      case 'object':
+        return content;
+      default:
+        return content;
+    }
   }
 
   async registerRoute(
@@ -50,7 +62,7 @@ class Server {
       await channel.assertExchange(exchangeName, 'topic');
       await channel.assertQueue(queueName);
       await channel.bindQueue(queueName, exchangeName, routingKey);
-      await channel.consume(queueName, onMessage, defaultConsumerOptions);
+      await channel.consume(queueName, msg => onMessage(this.decodeMessage(msg)), defaultConsumerOptions);
     });
   }
 
@@ -89,7 +101,7 @@ class Server {
       await channel.assertQueue(queueName);
       await channel.bindQueue(queueName, exchangeName, routingKey);
       await channel.consume(queueName, consumeMessage => {
-        const decoded = this.decodeMessage((consumeMessage?.content as Buffer).toString(), consumeMessage?.properties.contentType);
+        const decoded = this.decodeMessage(consumeMessage);
         return handlerFunction(reply(consumeMessage))(decoded);
       }, options);
     });
