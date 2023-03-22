@@ -12,14 +12,12 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
     (reply: Reply) => (decoded: Record<string, unknown>) => {
       const processingTime = 500;
       setTimeout(async () => {
-        console.log('Decoded: ', decoded);
-
         await reply({ test: 'Test' });
       }, processingTime);
     };
 
   const exchangeName = 'testExchange';
-  const message = JSON.stringify({ xxx: 'OurMessage' });
+  const message = { xxx: 'OurMessage' };
   const routingKey = 'testRoutingKey';
   const serverQueueName = 'testServerQueue';
   const replyQueueName = 'testReplyQueue';
@@ -42,14 +40,12 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
         replyQueueName,
       },
       {
-        amqpOptions: {
+        publishOptions: {
           contentType: 'application/json',
           persistent: true,
           headers: { accept: 'application/json' },
         },
       }
     );
-
-    console.log('response', response);
   }, 5000);
 })();

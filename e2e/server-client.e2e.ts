@@ -1,5 +1,5 @@
 import { ConnectionUrl } from 'amqp-connection-manager';
-import { ConsumeMessage, Options } from 'amqplib';
+import { Options } from 'amqplib';
 import { getClient } from '../src/Client/client';
 import { getServer } from '../src/Server/server';
 import { AckHandler } from '../src/Server/server.type';
@@ -7,25 +7,18 @@ import { testReadyObjects } from './test-objects';
 
 const handlerFunc: AckHandler =
   ({ ack }) =>
-    (msg: ConsumeMessage | null) => {
+    (msg: string | object) => {
       if (!msg) return;
       if (!ack) return;
 
-      console.log(msg.content.toString());
-
-
       try {
-        ack(msg);
+        // cl to stay
+        console.log('test', msg)
+        ack();
       } catch (error) {
         console.log('error', error);
       }
     };
-
-const basicHandler = (msg: ConsumeMessage | null) => {
-  if (!msg) return;
-
-  console.log(msg.content.toString());
-};
 
 const localUrl = 'amqp://guest:guest@localhost:5672/';
 const objectUrl = {
@@ -61,7 +54,15 @@ const checkMessagesDispatch = async (url: ConnectionUrl | ConnectionUrl[]) => {
 
   let counter = 0;
   setInterval(async () => {
-    await client.publishMessage({ exchangeName: 'exchange1', routingKey: 'something.test2' }, 'testMessage: ' + counter.toString());
+    // const message = {
+    //   value: 'testMessage: ' + counter.toString()
+    // };
+
+    // const message = 'i am test message'
+    const message = 123;
+    await client.publishMessage({ exchangeName: 'exchange1', routingKey: 'something.test2'}, message, {
+      sendType: 'string'
+    });
     counter++;
     console.log('sending message: ' + counter);
   }, 1000);

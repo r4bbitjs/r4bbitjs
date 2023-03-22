@@ -1,6 +1,7 @@
 # Rabbit-Wrapper
 # TODO: 
-   * Refactor server and the client (decoding / encoding messages)
+   * preparing header options doesn't work for the server rpc register so make it work
+   * we're working on e2e tests of RPC flow 
    * Generics to the rpc call
    * Write auto ack for client consume
    * reply exchange different then default and as an option accepting exchange 

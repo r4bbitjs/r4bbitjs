@@ -1,21 +1,21 @@
 import {
   Channel,
   ChannelWrapper,
-  ConnectionUrl,
-  Options,
+  ConnectionUrl
 } from 'amqp-connection-manager';
 import { ConsumeMessage } from 'amqplib';
 import { EventEmitter } from 'events';
 import { v4 as uuidv4 } from 'uuid';
-
+import { decodeMessage } from '../Common/decodeMessage';
+import { encodeMessage } from '../Common/encodeMessage';
+import { preparePublishOptions } from '../Common/prepareOptions';
 import { initRabbit } from '../Init/init';
 import { InitRabbitOptions } from '../Init/init.type';
 import {
   ClientConnection,
   ClientConnectionRPC,
-  ClientRPCOptions,
+  ClientRPCOptions
 } from './client.type';
-import { encodeMessage } from '../Common/encodeMessage';
 
 export class Client {
   private channelWrapper?: ChannelWrapper;
@@ -36,20 +36,6 @@ export class Client {
     return message;
   }
 
-  public prepareOptions(options?: ClientRPCOptions): Options.Publish {
-    const defaultOptions = { persistent: true };
-    const defaultMsgType = 'json';
-
-    return {
-      ...defaultOptions,
-      ...options?.amqpOptions,
-      headers: {
-        'x-send-type': options?.sendType ?? defaultMsgType,
-        'x-receive-type': options?.receiveType ?? defaultMsgType,
-      },
-    };
-  }
-
   public async publishMessage(
     connection: ClientConnection,
     message: Buffer | string | unknown,
@@ -65,7 +51,7 @@ export class Client {
       exchangeName,
       routingKey,
       encodeMessage(message, options?.sendType),
-      this.prepareOptions(options)
+      preparePublishOptions(options)
     );
   }
 
@@ -82,10 +68,9 @@ export class Client {
     const prefixedReplyQueueName = `reply.${replyQueueName}`;
 
     const clientConsumeFunction = (msg: ConsumeMessage | null) => {
-      const decoded = this.decodeMessage(
-        (msg?.content as Buffer).toString(),
-        msg?.properties.contentType
-      );
+      const decoded = decodeMessage(msg)
+      console.log('Client decoded', decoded)
+      
       this.eventEmitter.emit(msg?.properties.correlationId, decoded);
     };
 
@@ -99,7 +84,7 @@ export class Client {
       await channel.consume(
         prefixedReplyQueueName,
         clientConsumeFunction,
-        this.prepareOptions(options)
+        preparePublishOptions(options)
       );
     });
 
@@ -120,7 +105,7 @@ export class Client {
         routingKey,
         encodeMessage(message, options?.sendType),
         {
-          ...this.prepareOptions(options),
+          ...preparePublishOptions(options),
           replyTo: prefixedReplyQueueName,
           correlationId: corelationId,
         }
