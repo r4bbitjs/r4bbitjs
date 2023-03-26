@@ -12,6 +12,7 @@ parserOptions:
   sourceType: module
 plugins:
   - "@typescript-eslint"
+  - unused-imports
 rules:
   indent:
     - error
@@ -26,6 +27,7 @@ rules:
     - error
     - always
   max-len:
-    - error: true
+    - error
     - code: 80
-    - ignoreUrls: true
+  unused-imports/no-unused-imports-ts: error
+

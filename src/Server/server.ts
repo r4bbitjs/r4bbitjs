@@ -1,7 +1,7 @@
 import {
   Channel,
   ChannelWrapper,
-  ConnectionUrl
+  ConnectionUrl,
 } from 'amqp-connection-manager';
 import { ConsumeMessage, Options } from 'amqplib';
 import { decodeMessage } from '../Common/decodeMessage';
@@ -9,9 +9,15 @@ import { encodeMessage } from '../Common/encodeMessage';
 import { HEADER_RECEIVE_TYPE } from '../Common/types';
 import { initRabbit } from '../Init/init';
 import { InitRabbitOptions } from '../Init/init.type';
-import { AckHandler, Handler, RpcHandler, ServerConnection, ServerRPCOptions } from './server.type';
-import { prepareConsumeOptions, preparePublishOptions } from '../Common/prepareOptions';
-
+import {
+  AckHandler, Handler,
+  RpcHandler,
+  ServerConnection,
+  ServerRPCOptions,
+} from './server.type';
+import {
+  prepareConsumeOptions,
+} from '../Common/prepareOptions';
 
 class Server {
   private channelWrapper?: ChannelWrapper;
@@ -34,13 +40,13 @@ class Server {
 
     const { exchangeName, queueName, routingKey } = connection;
 
-    const simpleAck = (consumeMessage: ConsumeMessage): () => void => {
+    const simpleAck = (consumeMessage: ConsumeMessage): (() => void) => {
       return () => this.channelWrapper?.ack(consumeMessage);
-    }
+    };
 
-    const simpleNack = (consumeMessage: ConsumeMessage): () => void => {
+    const simpleNack = (consumeMessage: ConsumeMessage): (() => void) => {
       return () => this.channelWrapper?.nack(consumeMessage);
-    }
+    };
 
     const defaultConsumerOptions = options ?? { noAck: false };
 
@@ -48,21 +54,30 @@ class Server {
       await channel.assertExchange(exchangeName, 'topic');
       await channel.assertQueue(queueName);
       await channel.bindQueue(queueName, exchangeName, routingKey);
-      await channel.consume(queueName, msg => {
-        if (msg === null) {
-          throw new Error('Channel has ben canceled, ref: https://amqp-node.github.io/amqplib/channel_api.html#channel_consume');
-        }
+      await channel.consume(
+        queueName,
+        (msg) => {
+          if (msg === null) {
+            throw new Error(
+              'Channel has ben canceled,' +
+              ' ref:' +
+              ' https://amqp-node.github.io/amqplib/channel_api.html' +
+              '#channel_consume'
+            );
+          }
 
-        const onMessage = !options?.noAck
-          ? (handlerFunction as AckHandler)({
-            ack: simpleAck(msg),
-            nack: simpleNack(msg),
-          })
-          : (handlerFunction as Handler);
+          const onMessage = !options?.noAck
+            ? (handlerFunction as AckHandler)({
+              ack: simpleAck(msg),
+              nack: simpleNack(msg),
+            })
+            : (handlerFunction as Handler);
 
-        const decoded = decodeMessage(msg);
-        return onMessage(decoded);
-      }, defaultConsumerOptions);
+          const decoded = decodeMessage(msg);
+          return onMessage(decoded);
+        },
+        defaultConsumerOptions
+      );
     });
   }
 
@@ -77,35 +92,50 @@ class Server {
 
     const { exchangeName, queueName, routingKey } = connection;
 
-    const reply = (consumedMessage: ConsumeMessage | null) => async (replyMessage: Record<string, unknown> | string) => {
-      if (!this.channelWrapper) {
-        throw new Error('You have to trigger init method first');
-      }
+    const reply =
+      (consumedMessage: ConsumeMessage | null) =>
+        async (replyMessage: Record<string, unknown> | string) => {
+          if (!this.channelWrapper) {
+            throw new Error('You have to trigger init method first');
+          }
 
-      if (!consumedMessage) {
-        throw new Error('Consume message cannot be null');
-      }
+          if (!consumedMessage) {
+            throw new Error('Consume message cannot be null');
+          }
 
-      const { replyTo, correlationId } = consumedMessage.properties;
+          const { replyTo, correlationId } = consumedMessage.properties;
 
-      await this.channelWrapper.publish(exchangeName, replyTo, encodeMessage(replyMessage, consumedMessage.properties.headers[HEADER_RECEIVE_TYPE]), {
-        correlationId,
-      }, prepareConsumeOptions(options));
+          await this.channelWrapper.publish(
+            exchangeName,
+            replyTo,
+            encodeMessage(
+              replyMessage,
+              consumedMessage.properties.headers[HEADER_RECEIVE_TYPE]
+            ),
+            {
+              correlationId,
+            },
+            prepareConsumeOptions(options)
+          );
 
-      console.log('published a message and consume message', consumedMessage);
+          console.log('published a message and consume message', consumedMessage);
 
-      this.channelWrapper.ack.call(this.channelWrapper, consumedMessage);
-    };
+          this.channelWrapper.ack.call(this.channelWrapper, consumedMessage);
+        };
 
     await this.channelWrapper.addSetup(async (channel: Channel) => {
       await channel.assertExchange(exchangeName, 'topic');
       await channel.assertQueue(queueName);
       await channel.bindQueue(queueName, exchangeName, routingKey);
-      await channel.consume(queueName, consumeMessage => {
-        const decoded = decodeMessage(consumeMessage);
-        console.log('Decoded message', decoded);
-        return handlerFunction(reply(consumeMessage))(decoded);
-      }, prepareConsumeOptions(options));
+      await channel.consume(
+        queueName,
+        (consumeMessage) => {
+          const decoded = decodeMessage(consumeMessage);
+          console.log('Decoded message', decoded);
+          return handlerFunction(reply(consumeMessage))(decoded);
+        },
+        prepareConsumeOptions(options)
+      );
     });
   }
 }
