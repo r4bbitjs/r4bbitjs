@@ -5,13 +5,11 @@ const isString = (value: unknown): value is string => {
   return typeof value === 'string';
 };
 
-const isContainsUrl = (value: Object): value is { url: string } => {
+const isContainsUrl = (value: object): value is { url: string } => {
   return 'url' in value;
 };
 
-const isOptionsConnection = (
-  value: Object
-): value is Options.Connect => {
+const isOptionsConnection = (value: object): value is Options.Connect => {
   const isItTrue =
     'vhost' in value &&
     'hostname' in value &&
@@ -54,7 +52,7 @@ const getUrl = (connectionUrl: ConnectionUrl) => {
   );
 };
 
-const getUrlFlatList = (connectionUrls: ConnectionUrl[] | ConnectionUrl) => {  
+const getUrlFlatList = (connectionUrls: ConnectionUrl[] | ConnectionUrl) => {
   return Array.isArray(connectionUrls)
     ? connectionUrls.map((url) => getUrl(url))
     : [getUrl(connectionUrls)];

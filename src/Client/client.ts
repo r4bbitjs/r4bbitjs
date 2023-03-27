@@ -1,21 +1,21 @@
 import {
   Channel,
   ChannelWrapper,
-  ConnectionUrl
+  ConnectionUrl,
 } from 'amqp-connection-manager';
 import { ConsumeMessage } from 'amqplib';
 import { EventEmitter } from 'events';
 import { v4 as uuidv4 } from 'uuid';
 import { decodeMessage } from '../Common/decodeMessage';
 import { encodeMessage } from '../Common/encodeMessage';
-import { preparePublishOptions } from '../Common/prepareOptions';
 import { initRabbit } from '../Init/init';
 import { InitRabbitOptions } from '../Init/init.type';
 import {
   ClientConnection,
   ClientConnectionRPC,
-  ClientRPCOptions
+  ClientRPCOptions,
 } from './client.type';
+import { prepareHeaders } from '../Common/prepareHeaders';
 
 export class Client {
   private channelWrapper?: ChannelWrapper;
@@ -51,7 +51,10 @@ export class Client {
       exchangeName,
       routingKey,
       encodeMessage(message, options?.sendType),
-      preparePublishOptions(options)
+      {
+        headers: prepareHeaders(options?.sendType),
+        ...options?.publishOptions,
+      }
     );
   }
 
@@ -68,9 +71,7 @@ export class Client {
     const prefixedReplyQueueName = `reply.${replyQueueName}`;
 
     const clientConsumeFunction = (msg: ConsumeMessage | null) => {
-      const decoded = decodeMessage(msg)
-      console.log('Client decoded', decoded)
-      
+      const decoded = decodeMessage(msg);
       this.eventEmitter.emit(msg?.properties.correlationId, decoded);
     };
 
@@ -81,13 +82,12 @@ export class Client {
         exchangeName,
         prefixedReplyQueueName
       );
-      await channel.consume(
-        prefixedReplyQueueName,
-        clientConsumeFunction,
-        preparePublishOptions(options)
-      );
+      await channel.consume(prefixedReplyQueueName, clientConsumeFunction, {
+        ...options?.consumeOptions,
+      });
     });
 
+    // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
       const corelationId = uuidv4();
       this.eventEmitter.once(String(corelationId), (msg) => {
@@ -105,7 +105,8 @@ export class Client {
         routingKey,
         encodeMessage(message, options?.sendType),
         {
-          ...preparePublishOptions(options),
+          headers: prepareHeaders(options?.sendType),
+          ...options?.publishOptions,
           replyTo: prefixedReplyQueueName,
           correlationId: corelationId,
         }

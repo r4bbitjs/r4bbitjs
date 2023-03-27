@@ -5,7 +5,7 @@ const mockInitRabbit = jest.fn().mockReturnValueOnce({
 
 jest.mock('../Init/init', () => {
   return {
-    initRabbit: mockInitRabbit
+    initRabbit: mockInitRabbit,
   };
 });
 

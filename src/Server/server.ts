@@ -10,14 +10,12 @@ import { HEADER_RECEIVE_TYPE } from '../Common/types';
 import { initRabbit } from '../Init/init';
 import { InitRabbitOptions } from '../Init/init.type';
 import {
-  AckHandler, Handler,
+  AckHandler,
+  Handler,
   RpcHandler,
   ServerConnection,
   ServerRPCOptions,
 } from './server.type';
-import {
-  prepareConsumeOptions,
-} from '../Common/prepareOptions';
 
 class Server {
   private channelWrapper?: ChannelWrapper;
@@ -60,17 +58,17 @@ class Server {
           if (msg === null) {
             throw new Error(
               'Channel has ben canceled,' +
-              ' ref:' +
-              ' https://amqp-node.github.io/amqplib/channel_api.html' +
-              '#channel_consume'
+                ' ref:' +
+                ' https://amqp-node.github.io/amqplib/channel_api.html' +
+                '#channel_consume'
             );
           }
 
           const onMessage = !options?.noAck
             ? (handlerFunction as AckHandler)({
-              ack: simpleAck(msg),
-              nack: simpleNack(msg),
-            })
+                ack: simpleAck(msg),
+                nack: simpleNack(msg),
+              })
             : (handlerFunction as Handler);
 
           const decoded = decodeMessage(msg);
@@ -94,34 +92,32 @@ class Server {
 
     const reply =
       (consumedMessage: ConsumeMessage | null) =>
-        async (replyMessage: Record<string, unknown> | string) => {
-          if (!this.channelWrapper) {
-            throw new Error('You have to trigger init method first');
+      async (replyMessage: Record<string, unknown> | string) => {
+        if (!this.channelWrapper) {
+          throw new Error('You have to trigger init method first');
+        }
+
+        if (!consumedMessage) {
+          throw new Error('Consume message cannot be null');
+        }
+
+        const { replyTo, correlationId } = consumedMessage.properties;
+
+        await this.channelWrapper.publish(
+          exchangeName,
+          replyTo,
+          encodeMessage(
+            replyMessage,
+            consumedMessage.properties.headers[HEADER_RECEIVE_TYPE]
+          ),
+          {
+            ...options?.publishOptions,
+            correlationId,
           }
+        );
 
-          if (!consumedMessage) {
-            throw new Error('Consume message cannot be null');
-          }
-
-          const { replyTo, correlationId } = consumedMessage.properties;
-
-          await this.channelWrapper.publish(
-            exchangeName,
-            replyTo,
-            encodeMessage(
-              replyMessage,
-              consumedMessage.properties.headers[HEADER_RECEIVE_TYPE]
-            ),
-            {
-              correlationId,
-            },
-            prepareConsumeOptions(options)
-          );
-
-          console.log('published a message and consume message', consumedMessage);
-
-          this.channelWrapper.ack.call(this.channelWrapper, consumedMessage);
-        };
+        this.channelWrapper.ack.call(this.channelWrapper, consumedMessage);
+      };
 
     await this.channelWrapper.addSetup(async (channel: Channel) => {
       await channel.assertExchange(exchangeName, 'topic');
@@ -134,7 +130,7 @@ class Server {
           console.log('Decoded message', decoded);
           return handlerFunction(reply(consumeMessage))(decoded);
         },
-        prepareConsumeOptions(options)
+        options?.consumeOptions
       );
     });
   }

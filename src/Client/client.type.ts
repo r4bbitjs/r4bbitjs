@@ -1,5 +1,5 @@
 import { MessageType } from '../Common/types';
-import { Options } from 'amqp-connection-manager';
+import { ServerRPCOptions } from '../Server/server.type';
 
 export type ClientConnection = {
   exchangeName: string;
@@ -13,9 +13,5 @@ export type ClientConnectionRPC = {
 };
 
 export type ClientRPCOptions = {
-  sendType?: MessageType;
   receiveType?: MessageType;
-  publishOptions?: Options.Publish;
-};
-
-
+} & ServerRPCOptions;
