@@ -15,8 +15,8 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
         if (!msg) {
           return;
         }
-        console.log(msg);
-        await reply({ test: 'test' });
+        console.log('incomin message', msg);
+        await reply(msg);
       }, processingTime);
     };
 

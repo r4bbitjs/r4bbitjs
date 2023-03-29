@@ -1,7 +1,6 @@
 import { MessageType } from './types';
 
 export const encodeMessage = (message: unknown, messageType?: MessageType) => {
-  console.log('XXX: ' + messageType);
   switch (messageType) {
     case 'json':
       return JSON.stringify(message);

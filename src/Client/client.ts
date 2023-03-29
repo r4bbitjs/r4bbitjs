@@ -71,7 +71,9 @@ export class Client {
     const prefixedReplyQueueName = `reply.${replyQueueName}`;
 
     const clientConsumeFunction = (msg: ConsumeMessage | null) => {
+      // console.log('Before decoding', msg);
       const decoded = decodeMessage(msg);
+      // console.log('After decoding', decoded);
       this.eventEmitter.emit(msg?.properties.correlationId, decoded);
     };
 
