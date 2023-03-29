@@ -6,6 +6,7 @@ import {
 import { ConsumeMessage, Options } from 'amqplib';
 import { decodeMessage } from '../Common/decodeMessage';
 import { encodeMessage } from '../Common/encodeMessage';
+import { prepareHeaders } from '../Common/prepareHeaders';
 import { HEADER_RECEIVE_TYPE } from '../Common/types';
 import { initRabbit } from '../Init/init';
 import { InitRabbitOptions } from '../Init/init.type';
@@ -103,16 +104,17 @@ class Server {
 
         const { replyTo, correlationId } = consumedMessage.properties;
 
+        const receiveType =
+          consumedMessage.properties.headers[HEADER_RECEIVE_TYPE];
+
         await this.channelWrapper.publish(
           exchangeName,
           replyTo,
-          encodeMessage(
-            replyMessage,
-            consumedMessage.properties.headers[HEADER_RECEIVE_TYPE]
-          ),
+          encodeMessage(replyMessage, receiveType),
           {
             ...options?.publishOptions,
             correlationId,
+            headers: prepareHeaders({ isServer: true }, receiveType),
           }
         );
 

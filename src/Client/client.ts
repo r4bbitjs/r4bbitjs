@@ -52,7 +52,7 @@ export class Client {
       routingKey,
       encodeMessage(message, options?.sendType),
       {
-        headers: prepareHeaders(options?.sendType),
+        headers: prepareHeaders({ isServer: false }, options?.sendType),
         ...options?.publishOptions,
       }
     );
@@ -71,9 +71,7 @@ export class Client {
     const prefixedReplyQueueName = `reply.${replyQueueName}`;
 
     const clientConsumeFunction = (msg: ConsumeMessage | null) => {
-      // console.log('Before decoding', msg);
       const decoded = decodeMessage(msg);
-      // console.log('After decoding', decoded);
       this.eventEmitter.emit(msg?.properties.correlationId, decoded);
     };
 
@@ -86,6 +84,7 @@ export class Client {
       );
       await channel.consume(prefixedReplyQueueName, clientConsumeFunction, {
         ...options?.consumeOptions,
+        noAck: true,
       });
     });
 
@@ -107,7 +106,11 @@ export class Client {
         routingKey,
         encodeMessage(message, options?.sendType),
         {
-          headers: prepareHeaders(options?.sendType),
+          headers: prepareHeaders(
+            { isServer: false },
+            options?.sendType,
+            options?.receiveType
+          ),
           ...options?.publishOptions,
           replyTo: prefixedReplyQueueName,
           correlationId: corelationId,
