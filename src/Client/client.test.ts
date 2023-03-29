@@ -1,20 +1,18 @@
+import { prepareHeaders } from '../Common/prepareHeaders';
 const mockPublishFn = jest.fn();
-const mockInitRabbit = jest.fn().mockReturnValueOnce(
-  {
-    publish: mockPublishFn,
-  });
+const mockInitRabbit = jest.fn().mockReturnValueOnce({
+  publish: mockPublishFn,
+});
 
 jest.mock('../Init/init', () => {
   return {
-    initRabbit: mockInitRabbit
+    initRabbit: mockInitRabbit,
   };
 });
 
 import { Client, getClient } from './client';
 
-
 describe('Client object testing', () => {
-
   it('should call init during client instantiation', async () => {
     // given
     const connectionUrl = 'fake-connection-url';
@@ -35,7 +33,9 @@ describe('Client object testing', () => {
 
     // when & then
     const client = new Client();
-    await expect(client.publishMessage(exchangeName, key, message)).rejects.toEqual(expectedError);
+    await expect(
+      client.publishMessage({ exchangeName, routingKey: key }, message)
+    ).rejects.toEqual(expectedError);
   });
 
   it('should publish a message when publishMessage functions is called', async () => {
@@ -43,16 +43,16 @@ describe('Client object testing', () => {
     const exchangeName = 'test-exchange';
     const key = 'test-key';
     const message = 'test-message';
-    const options = {
-      persistent: true
-    };
     const client = await getClient('test-connection-url');
 
     // when
-    client.publishMessage(exchangeName, key, message);
+    client.publishMessage({ exchangeName, routingKey: key }, message, {
+      sendType: 'string',
+    });
 
     // then
-    expect(mockPublishFn).toHaveBeenCalledWith(exchangeName, key, message, options);
+    expect(mockPublishFn).toHaveBeenCalledWith(exchangeName, key, message, {
+      headers: prepareHeaders('string'),
+    });
   });
-
 });

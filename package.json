@@ -7,7 +7,9 @@
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "e2e": "ts-node ./e2e/server-client.e2e.ts",
-    "e2e-rabbit": "ts-node ./e2e/rpc.e2e.ts",
+    "e2e-rpc": "ts-node ./e2e/rpc.e2e.ts",
+    "e2e-experimental-rpc": "ts-node ./e2e/rpc-experimental.e2e.ts",
+    "e2e-experimental-rabbit-debug": "ts-node ./e2e/rpc-experimental.e2e.ts --inspect",
     "test": "jest",
     "initRabbit": "ts-node ./src/Init/init.ts"
   },
@@ -29,7 +31,7 @@
     "amqplib": "^0.10.3",
     "eslint": "^8.33.0",
     "eslint-config-prettier": "^8.6.0",
-    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-unused-imports": "^2.0.0",
     "jest": "^29.4.3",
     "prettier": "^2.8.4",
     "ts-jest": "^29.0.5",
@@ -39,6 +41,7 @@
   },
   "dependencies": {
     "amqp-connection-manager": "^4.1.10",
+    "eslint-plugin-prettier": "^4.2.1",
     "events": "^3.3.0",
     "nodemon": "^2.0.20",
     "rxjs": "^7.8.0",

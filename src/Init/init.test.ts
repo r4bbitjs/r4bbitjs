@@ -1,13 +1,14 @@
+import { ZodError } from 'zod';
+
 const mockCreateChannel = jest.fn().mockReturnValue({
-  waitForConnect: jest.fn()
-})
+  waitForConnect: jest.fn(),
+});
 const mockConnect = jest.fn().mockReturnValue({
-  createChannel: mockCreateChannel
+  createChannel: mockCreateChannel,
 });
 
-
 jest.mock('amqp-connection-manager', () => ({
-  connect: mockConnect
+  connect: mockConnect,
 }));
 
 import { initRabbit } from './init';
@@ -49,7 +50,7 @@ describe('init function tests', () => {
 
     falsyUris.forEach((uri) => {
       // when & then
-      expect(rabbitUriSchema.parse).toThrowError();
+      expect(() => rabbitUriSchema.parse(uri)).toThrowError(ZodError);
     });
   });
 });

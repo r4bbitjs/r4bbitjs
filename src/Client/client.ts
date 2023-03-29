@@ -2,15 +2,20 @@ import {
   Channel,
   ChannelWrapper,
   ConnectionUrl,
-  Options
 } from 'amqp-connection-manager';
 import { ConsumeMessage } from 'amqplib';
 import { EventEmitter } from 'events';
 import { v4 as uuidv4 } from 'uuid';
-
+import { decodeMessage } from '../Common/decodeMessage';
+import { encodeMessage } from '../Common/encodeMessage';
 import { initRabbit } from '../Init/init';
 import { InitRabbitOptions } from '../Init/init.type';
-import { ClientConnection, ClientConnectionRPC } from './client.type';
+import {
+  ClientConnection,
+  ClientConnectionRPC,
+  ClientRPCOptions,
+} from './client.type';
+import { prepareHeaders } from '../Common/prepareHeaders';
 
 export class Client {
   private channelWrapper?: ChannelWrapper;
@@ -23,10 +28,18 @@ export class Client {
     this.channelWrapper = await initRabbit(connectionUrls, options);
   };
 
+  public decodeMessage(message: string, contentType: string | undefined) {
+    if (contentType === 'application/json') {
+      return JSON.parse(message);
+    }
+
+    return message;
+  }
+
   public async publishMessage(
     connection: ClientConnection,
     message: Buffer | string | unknown,
-    options?: Options.Publish
+    options?: ClientRPCOptions
   ) {
     if (!this.channelWrapper) {
       throw new Error('You have to trigger init method first');
@@ -34,46 +47,48 @@ export class Client {
 
     const { exchangeName, routingKey } = connection;
 
-    const defaultOptions = options ?? { persistent: true };
-
     await this.channelWrapper.publish(
       exchangeName,
       routingKey,
-      message,
-      defaultOptions
+      encodeMessage(message, options?.sendType),
+      {
+        headers: prepareHeaders({ isServer: false }, options?.sendType),
+        ...options?.publishOptions,
+      }
     );
   }
 
   public async publishRPCMessage(
     message: Buffer | string | unknown,
     clientConnection: ClientConnectionRPC,
-    options?: Options.Publish
+    options?: ClientRPCOptions
   ) {
     if (!this.channelWrapper) {
       throw new Error('You have to trigger init method first');
     }
 
     const { exchangeName, replyQueueName, routingKey } = clientConnection;
-    const defaultOptions = options ?? { persistent: true };
     const prefixedReplyQueueName = `reply.${replyQueueName}`;
 
     const clientConsumeFunction = (msg: ConsumeMessage | null) => {
-      this.eventEmitter.emit(msg?.properties.correlationId, msg);
+      const decoded = decodeMessage(msg);
+      this.eventEmitter.emit(msg?.properties.correlationId, decoded);
     };
 
     await this.channelWrapper.addSetup(async (channel: Channel) => {
       await channel.assertQueue(prefixedReplyQueueName);
-      await channel.bindQueue(prefixedReplyQueueName, exchangeName, prefixedReplyQueueName);
-      await channel.consume(
+      await channel.bindQueue(
         prefixedReplyQueueName,
-        clientConsumeFunction,
-        options
+        exchangeName,
+        prefixedReplyQueueName
       );
+      await channel.consume(prefixedReplyQueueName, clientConsumeFunction, {
+        ...options?.consumeOptions,
+        noAck: true,
+      });
     });
 
-    // create a promise that resolves when an event is cautch
-    // TODO: create a util with Promise with a timeout
-    // TODO: maybe use a timeout option in amqp wrapper lib
+    // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
       const corelationId = uuidv4();
       this.eventEmitter.once(String(corelationId), (msg) => {
@@ -86,11 +101,21 @@ export class Client {
       setTimeout(() => {
         reject('timeout');
       }, 30_000);
-      await this.channelWrapper.publish(exchangeName, routingKey, message, {
-        ...defaultOptions,
-        replyTo: prefixedReplyQueueName,
-        correlationId: corelationId,
-      });
+      await this.channelWrapper.publish(
+        exchangeName,
+        routingKey,
+        encodeMessage(message, options?.sendType),
+        {
+          headers: prepareHeaders(
+            { isServer: false },
+            options?.sendType,
+            options?.receiveType
+          ),
+          ...options?.publishOptions,
+          replyTo: prefixedReplyQueueName,
+          correlationId: corelationId,
+        }
+      );
     });
   }
 }

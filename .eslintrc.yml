@@ -6,26 +6,14 @@ extends:
   - plugin:@typescript-eslint/recommended
   - prettier
 overrides: []
-parser: "@typescript-eslint/parser"
+parser: '@typescript-eslint/parser'
 parserOptions:
   ecmaVersion: latest
   sourceType: module
 plugins:
-  - "@typescript-eslint"
+  - '@typescript-eslint'
+  - unused-imports
+  - prettier
 rules:
-  indent:
-    - error
-    - 2
-  linebreak-style:
-    - error
-    - unix
-  quotes:
-    - error
-    - single
-  semi:
-    - error
-    - always
-  max-len:
-    - error: true
-    - code: 80
-    - ignoreUrls: true
+  unused-imports/no-unused-imports-ts: error
+  prettier/prettier: error
