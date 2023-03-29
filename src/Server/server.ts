@@ -127,7 +127,6 @@ class Server {
         queueName,
         (consumeMessage) => {
           const decoded = decodeMessage(consumeMessage);
-          console.log('Decoded message', decoded);
           return handlerFunction(reply(consumeMessage))(decoded);
         },
         options?.consumeOptions

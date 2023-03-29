@@ -9,9 +9,6 @@ export const decodeMessage = (consumeMessage: ConsumeMessage | null) => {
     HEADER_SEND_TYPE
   ] as MessageType;
 
-  console.log('client send type', sendType);
-  console.log('client content', content);
-
   // TODO: Zod Validation
   switch (sendType) {
     case 'json':

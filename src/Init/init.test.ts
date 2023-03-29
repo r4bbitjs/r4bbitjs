@@ -1,3 +1,5 @@
+import { ZodError } from 'zod';
+
 const mockCreateChannel = jest.fn().mockReturnValue({
   waitForConnect: jest.fn(),
 });
@@ -48,7 +50,7 @@ describe('init function tests', () => {
 
     falsyUris.forEach((uri) => {
       // when & then
-      expect(rabbitUriSchema.parse(uri)).toThrowError();
+      expect(() => rabbitUriSchema.parse(uri)).toThrowError(ZodError);
     });
   });
 });

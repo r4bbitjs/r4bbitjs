@@ -28,8 +28,8 @@ export type ServerConnection = {
 };
 
 export type ServerRPCOptions = {
-  publishOptions: Options.Publish;
-  consumeOptions: Options.Consume;
-  sendType: MessageType;
+  publishOptions?: Options.Publish;
+  consumeOptions?: Options.Consume;
+  sendType?: MessageType;
   correlationId?: string;
 };

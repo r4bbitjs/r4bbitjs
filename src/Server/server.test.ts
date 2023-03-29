@@ -38,9 +38,7 @@ describe('Server tests', () => {
     // when
     const server = await getServer(connectionUrl);
     await server.registerRoute(
-      queueName,
-      routingKey,
-      exchangeName,
+      { queueName, routingKey, exchangeName },
       handlerFunction,
       options
     );

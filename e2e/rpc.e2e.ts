@@ -41,6 +41,5 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
     replyQueueName,
   });
 
-
   console.log('response', response, typeof response);
 })();
