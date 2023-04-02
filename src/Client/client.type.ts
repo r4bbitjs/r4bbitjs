@@ -14,4 +14,6 @@ export type ClientConnectionRPC = {
 
 export type ClientRPCOptions = {
   receiveType?: MessageType;
+  timeoutRace?: number;
+  waitedReplies?: number;
 } & ServerRPCOptions;

@@ -9,15 +9,19 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
   const client = await getClient(localUrl);
 
   const handler: RpcHandler =
-    (reply: Reply) => (decoded: Record<string, unknown>) => {
+    (reply: Reply) => (msg: Record<string, unknown> | string) => {
       const processingTime = 500;
       setTimeout(async () => {
-        await reply({ test: 'Test' });
+        if (!msg) {
+          return;
+        }
+        console.log('incomin message', msg);
+        await reply(msg);
       }, processingTime);
     };
 
   const exchangeName = 'testExchange';
-  const message = { xxx: 'OurMessage' };
+  const objectMessage = { message: 'OurMessage' };
   const routingKey = 'testRoutingKey';
   const serverQueueName = 'testServerQueue';
   const replyQueueName = 'testReplyQueue';
@@ -31,21 +35,11 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
     handler
   );
 
-  setInterval(async () => {
-    const response = await client.publishRPCMessage(
-      message,
-      {
-        exchangeName,
-        routingKey,
-        replyQueueName,
-      },
-      {
-        publishOptions: {
-          contentType: 'application/json',
-          persistent: true,
-          headers: { accept: 'application/json' },
-        },
-      }
-    );
-  }, 5000);
+  const response = await client.publishMultipleRPCMessage(objectMessage, {
+    exchangeName,
+    routingKey,
+    replyQueueName,
+  });
+
+  console.log('response', response, typeof response);
 })();
