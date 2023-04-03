@@ -35,11 +35,26 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
     handler
   );
 
-  const response = await client.publishMultipleRPCMessage(objectMessage, {
-    exchangeName,
-    routingKey,
-    replyQueueName,
-  });
+  await server.registerRPCRoute(
+    {
+      queueName: 'complete-different-queue',
+      routingKey,
+      exchangeName,
+    },
+    handler
+  );
+
+  const response = await client.testRpcMultiple(
+    objectMessage,
+    {
+      exchangeName,
+      routingKey,
+      replyQueueName,
+    },
+    {
+      timeoutRace: 10_000,
+    }
+  );
 
   console.log('response', response, typeof response);
 })();

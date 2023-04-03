@@ -88,12 +88,14 @@ class Server {
     if (!this.channelWrapper) {
       throw new Error('You have to trigger init method first');
     }
+    console.log('I am called 1');
 
     const { exchangeName, queueName, routingKey } = connection;
 
     const reply =
       (consumedMessage: ConsumeMessage | null) =>
       async (replyMessage: Record<string, unknown> | string) => {
+        console.log('I am called in consume func');
         if (!this.channelWrapper) {
           throw new Error('You have to trigger init method first');
         }

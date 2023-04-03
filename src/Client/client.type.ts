@@ -17,3 +17,14 @@ export type ClientRPCOptions = {
   timeoutRace?: number;
   waitedReplies?: number;
 } & ServerRPCOptions;
+
+export type ClientRPCOptionsTest = {
+  receiveType?: MessageType;
+  timeoutRace?: number;
+  waitedReplies?: number;
+  expectedNumReplies?: number;
+} & ServerRPCOptions;
+
+export type ClientObservable = {
+  message: Record<string, unknown>;
+};
