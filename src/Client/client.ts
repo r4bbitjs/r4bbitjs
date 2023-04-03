@@ -271,15 +271,12 @@ export class Client {
       const observer: Observer<ClientObservable> = {
         next: (data) => {
           allReplies.push(data.message);
-          console.log('pushed data', data);
         },
         error: (error: Error) => {
           reject(error);
           this.removeSubject(corelationId, subscription);
-          console.log('error', error);
         },
         complete: () => {
-          console.log('am i called, complete');
           resolve(allReplies);
           this.removeSubject(corelationId, subscription);
         },
