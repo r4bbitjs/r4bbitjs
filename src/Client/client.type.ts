@@ -1,4 +1,5 @@
 import { MessageType } from '../Common/types';
+import { ResponseContains } from '../Common/types';
 import { ServerRPCOptions } from '../Server/server.type';
 
 export type ClientConnection = {
@@ -14,15 +15,22 @@ export type ClientConnectionRPC = {
 
 export type ClientRPCOptions = {
   receiveType?: MessageType;
-  timeoutRace?: number;
-  waitedReplies?: number;
+  timeout?: number;
+  responseContains?: ResponseContains;
 } & ServerRPCOptions;
 
-export type ClientRPCOptionsTest = {
+export type ClientRPCOptionsMultiple = {
   receiveType?: MessageType;
-  timeoutRace?: number;
-  waitedReplies?: number;
-  expectedNumReplies?: number;
+  timeout?: number;
+  responseContains?: ResponseContains;
+  waitedReplies: number;
+} & ServerRPCOptions;
+
+export type ClientRPCOptionsUnknownReplies = {
+  receiveType?: MessageType;
+  timeout?: number;
+  responseContains?: ResponseContains;
+  handler: (msg: Record<string, unknown>) => void;
 } & ServerRPCOptions;
 
 export type ClientObservable = {

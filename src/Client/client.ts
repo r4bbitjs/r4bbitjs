@@ -8,16 +8,19 @@ import { EventEmitter } from 'events';
 import { v4 as uuidv4 } from 'uuid';
 import { decodeMessage } from '../Common/decodeMessage';
 import { encodeMessage } from '../Common/encodeMessage';
+import { prepareResponse } from '../Common/prepareResponse';
 import { initRabbit } from '../Init/init';
 import { InitRabbitOptions } from '../Init/init.type';
 import {
   ClientConnection,
   ClientConnectionRPC,
   ClientRPCOptions,
+  ClientRPCOptionsMultiple,
   ClientObservable,
+  ClientRPCOptionsUnknownReplies,
 } from './client.type';
 import { prepareHeaders } from '../Common/prepareHeaders';
-import { Observable, Subscription, Subject, Observer } from 'rxjs';
+import { Subscription, Subject, Observer } from 'rxjs';
 
 const DEFAULT_TIMEOUT = 30_000;
 
@@ -109,7 +112,7 @@ export class Client {
       setTimeout(() => {
         emitter.removeListener(String(corelationId), listener);
         reject('timeout');
-      }, options?.timeoutRace ?? DEFAULT_TIMEOUT);
+      }, options?.timeout ?? DEFAULT_TIMEOUT);
       await this.channelWrapper.publish(
         exchangeName,
         routingKey,
@@ -128,59 +131,77 @@ export class Client {
     }) as Promise<ResponseType>;
   }
 
-  // TODO: Add generics to return type
-  /*
-    timeoutRace: 30,
-    waitedReplies: -1, 1, 4,
-    useHandlerClass: myMultiple,
-    handler: {
-      'sourceName': func<T, K>: ({res: {}, err: {}, source: ''}) => {},
-      'anotherSource': func ...
+  private getCorrlationIdSubject<T>(correlationId: string): Subject<T> {
+    const subject$ = this.messageMap.get(correlationId) as Subject<T>;
+    if (!subject$) {
+      throw new Error(
+        `No such correlationId in the messageMap ${correlationId}`
+      );
     }
-  */
+    return subject$;
+  }
+
+  private removeSubject(correlationId: string, subscription: Subscription) {
+    this.messageMap.get(correlationId)?.unsubscribe();
+    subscription.unsubscribe();
+    this.messageMap.delete(correlationId);
+  }
+
+  // TODO: Add generics to return type
   public async publishMultipleRPCMessage(
     message: Buffer | string | unknown,
     clientConnection: ClientConnectionRPC,
-    options?: ClientRPCOptions
+    options: ClientRPCOptionsMultiple
   ) {
     const { exchangeName, replyQueueName, routingKey } = clientConnection;
     const prefixedReplyQueueName = `reply.${replyQueueName}`;
 
     const corelationId = uuidv4();
+    this.messageMap.set(corelationId, new Subject());
 
     // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
+      const allReplies: unknown[] = [];
       if (!this.channelWrapper) {
         throw new Error('You have to trigger init method first');
       }
 
       const clientConsumeFunction = (msg: ConsumeMessage | null) => {
-        const decoded = decodeMessage(msg);
-
-        const observable$ = new Observable((subscriber) => {
-          subscriber.next({
-            correlationId: msg?.properties.correlationId,
-            message: decoded,
-          });
-        });
-
-        // eslint-disable-next-line prefer-const
-        let subscription: Subscription;
-
-        const observer = {
-          next: (data: any) => {
-            if (data.correlationId === corelationId) {
-              resolve(data.message);
-              setTimeout(() => {
-                subscription.unsubscribe();
-              }, 10);
-              // subscription.unsubscribe();
-            }
-          },
-        };
-
-        subscription = observable$.subscribe(observer);
+        // TODO: Headers!!!
+        this.getCorrlationIdSubject(msg?.properties.correlationId).next(
+          prepareResponse(msg, options?.responseContains)
+        );
       };
+
+      // eslint-disable-next-line prefer-const
+      let subscription: Subscription;
+
+      const observer: Observer<ClientObservable> = {
+        next: (data) => {
+          allReplies.push(data);
+
+          if (allReplies.length === options?.waitedReplies) {
+            resolve(allReplies);
+          }
+        },
+        error: (error: Error) => {
+          reject(error);
+          this.removeSubject(corelationId, subscription);
+        },
+        complete: () => {
+          resolve(allReplies);
+          this.removeSubject(corelationId, subscription);
+        },
+      };
+
+      setTimeout(() => {
+        this.getCorrlationIdSubject(corelationId).complete();
+      }, options?.timeout || DEFAULT_TIMEOUT);
+
+      subscription =
+        this.getCorrlationIdSubject<ClientObservable>(corelationId).subscribe(
+          observer
+        );
 
       await this.channelWrapper.addSetup(async (channel: Channel) => {
         await channel.assertQueue(prefixedReplyQueueName);
@@ -198,11 +219,6 @@ export class Client {
       if (!this.channelWrapper) {
         throw new Error('You have to trigger init method first');
       }
-
-      setTimeout(() => {
-        reject('timeout');
-        // unsubscribe();
-      }, options?.timeoutRace ?? DEFAULT_TIMEOUT);
       await this.channelWrapper.publish(
         exchangeName,
         routingKey,
@@ -221,26 +237,10 @@ export class Client {
     });
   }
 
-  private getCorrlationIdSubject<T>(correlationId: string): Subject<T> {
-    const subject$ = this.messageMap.get(correlationId) as Subject<T>;
-    if (!subject$) {
-      throw new Error(
-        `No such correlationId in the messageMap ${correlationId}`
-      );
-    }
-    return subject$;
-  }
-
-  private removeSubject(correlationId: string, subscription: Subscription) {
-    this.messageMap.get(correlationId)?.unsubscribe();
-    subscription.unsubscribe();
-    this.messageMap.delete(correlationId);
-  }
-
-  public async testRpcMultiple(
+  public async publishUnknownWaitedReplies(
     message: Buffer | string | unknown,
     clientConnection: ClientConnectionRPC,
-    options?: ClientRPCOptions
+    options: ClientRPCOptionsUnknownReplies
   ) {
     const { exchangeName, replyQueueName, routingKey } = clientConnection;
     const prefixedReplyQueueName = `reply.${replyQueueName}`;
@@ -259,10 +259,9 @@ export class Client {
       const clientConsumeFunction = (msg: ConsumeMessage | null) => {
         const decoded = decodeMessage(msg);
 
-        // TODO: Headers!!!
-        this.getCorrlationIdSubject(msg?.properties.correlationId).next({
-          message: decoded,
-        });
+        this.getCorrlationIdSubject(msg?.properties.correlationId).next(
+          prepareResponse(decoded, options?.responseContains)
+        );
       };
 
       // eslint-disable-next-line prefer-const
@@ -270,6 +269,7 @@ export class Client {
 
       const observer: Observer<ClientObservable> = {
         next: (data) => {
+          options?.handler && options.handler(data);
           allReplies.push(data.message);
         },
         error: (error: Error) => {
@@ -284,7 +284,7 @@ export class Client {
 
       setTimeout(() => {
         this.getCorrlationIdSubject(corelationId).complete();
-      }, options?.timeoutRace);
+      }, options?.timeout || DEFAULT_TIMEOUT);
 
       subscription =
         this.getCorrlationIdSubject<ClientObservable>(corelationId).subscribe(

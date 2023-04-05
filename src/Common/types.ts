@@ -6,7 +6,14 @@ export type MessageHeaders =
     }
   | MessagePropertyHeaders;
 
+export type ResponseContains = {
+  signature?: boolean;
+  headers?: boolean;
+  content?: boolean;
+};
+
 export type MessageType = 'json' | 'string' | 'object';
 
 export const HEADER_SEND_TYPE = 'x-send-type';
 export const HEADER_RECEIVE_TYPE = 'x-receive-type';
+export const HEADER_REPLY_SIGNATURE = 'x-reply-signature';

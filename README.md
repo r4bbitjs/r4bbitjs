@@ -30,6 +30,8 @@
 1. [DONE] reply = -1, timeout >= 0 Client has to wait until promise resolves 
 2. reply = -1, timeout >= 0 Response is processed by the client handler function
 3. reply = 3, timeout 10 a counter variable counts until all the replies receive and resolves
-4. give headers to the client with the decoded message
+4. Make the response spread if only content is specified
+5. Allow from user a whitelist of possible serers also instead of waitedReplies
+6. give headers to the client with the decoded message
 
 

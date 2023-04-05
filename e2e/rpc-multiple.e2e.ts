@@ -32,7 +32,10 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
       routingKey,
       exchangeName,
     },
-    handler
+    handler,
+    {
+      replySignature: 'server-1',
+    }
   );
 
   await server.registerRPCRoute(
@@ -41,10 +44,13 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
       routingKey,
       exchangeName,
     },
-    handler
+    handler,
+    {
+      replySignature: 'server-2',
+    }
   );
 
-  const response = await client.testRpcMultiple(
+  const response = await client.publishMultipleRPCMessage(
     objectMessage,
     {
       exchangeName,
@@ -52,7 +58,13 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
       replyQueueName,
     },
     {
-      timeoutRace: 10_000,
+      timeout: 5_000,
+      waitedReplies: 2,
+      responseContains: {
+        content: true,
+        headers: true,
+        signature: true,
+      },
     }
   );
 

@@ -114,7 +114,10 @@ class Server {
           {
             ...options?.publishOptions,
             correlationId,
-            headers: prepareHeaders({ isServer: true }, receiveType),
+            headers: prepareHeaders(
+              { isServer: true, signature: options?.replySignature },
+              receiveType
+            ),
           }
         );
 
