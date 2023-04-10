@@ -3,45 +3,43 @@ type TestObject = {
   queues: {
     queueName: string;
     keys: string[];
-  }[]
-}
+  }[];
+};
 
-const testObject = [{
-  exchangeName: 'exchange1',
-  queues: [
-    {
-      queueName: 'queue1',
-      keys: ['test1.*', '*.test2']
-    },
-    {
-      queueName: 'queue2',
-      keys: ['test3.*', '*.test2']
-    },
-  ]
-},
-{
-  exchangeName: 'exchange2',
-  queues: [
-    {
-      queueName: 'queue1',
-      keys: ['test1.*', '*.test4']
-    },
-    {
-      queueName: 'queue3',
-      keys: ['test1.*', '*.test5'],
-    },
-
-  ]
-},
+const testObject = [
+  {
+    exchangeName: 'exchange1',
+    queues: [
+      {
+        queueName: 'queue1',
+        keys: ['test1.*', '*.test2'],
+      },
+      {
+        queueName: 'queue2',
+        keys: ['test3.*', '*.test2'],
+      },
+    ],
+  },
+  {
+    exchangeName: 'exchange2',
+    queues: [
+      {
+        queueName: 'queue1',
+        keys: ['test1.*', '*.test4'],
+      },
+      {
+        queueName: 'queue3',
+        keys: ['test1.*', '*.test5'],
+      },
+    ],
+  },
 ];
 
 type FlatObjects = {
   exchangeName: string;
   queueName: string;
   key: string;
-}
-
-
+};
 
 const flatTheObjects = (testObject: TestObject[]): FlatObjects[] => {
   const flattenedObjects: FlatObjects[] = [];
@@ -51,7 +49,7 @@ const flatTheObjects = (testObject: TestObject[]): FlatObjects[] => {
         flattenedObjects.push({
           exchangeName: test.exchangeName,
           queueName: queue.queueName,
-          key
+          key,
         });
       }
     }

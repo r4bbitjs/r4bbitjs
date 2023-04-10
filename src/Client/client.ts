@@ -15,9 +15,8 @@ import {
   ClientConnection,
   ClientConnectionRPC,
   ClientRPCOptions,
-  ClientRPCOptionsMultiple,
   ClientObservable,
-  ClientRPCOptionsUnknownReplies,
+  ClientMultipleRPC,
 } from './client.type';
 import { prepareHeaders } from '../Common/prepareHeaders';
 import { Subscription, Subject, Observer } from 'rxjs';
@@ -147,11 +146,10 @@ export class Client {
     this.messageMap.delete(correlationId);
   }
 
-  // TODO: Add generics to return type
-  public async publishMultipleRPCMessage(
+  public async publishMultipleRPC(
     message: Buffer | string | unknown,
     clientConnection: ClientConnectionRPC,
-    options: ClientRPCOptionsMultiple
+    options: ClientMultipleRPC
   ) {
     const { exchangeName, replyQueueName, routingKey } = clientConnection;
     const prefixedReplyQueueName = `reply.${replyQueueName}`;
@@ -183,94 +181,8 @@ export class Client {
           if (allReplies.length === options?.waitedReplies) {
             resolve(allReplies);
           }
-        },
-        error: (error: Error) => {
-          reject(error);
-          this.removeSubject(corelationId, subscription);
-        },
-        complete: () => {
-          resolve(allReplies);
-          this.removeSubject(corelationId, subscription);
-        },
-      };
 
-      setTimeout(() => {
-        this.getCorrlationIdSubject(corelationId).complete();
-      }, options?.timeout || DEFAULT_TIMEOUT);
-
-      subscription =
-        this.getCorrlationIdSubject<ClientObservable>(corelationId).subscribe(
-          observer
-        );
-
-      await this.channelWrapper.addSetup(async (channel: Channel) => {
-        await channel.assertQueue(prefixedReplyQueueName);
-        await channel.bindQueue(
-          prefixedReplyQueueName,
-          exchangeName,
-          prefixedReplyQueueName
-        );
-        await channel.consume(prefixedReplyQueueName, clientConsumeFunction, {
-          ...options?.consumeOptions,
-          noAck: true,
-        });
-      });
-
-      if (!this.channelWrapper) {
-        throw new Error('You have to trigger init method first');
-      }
-      await this.channelWrapper.publish(
-        exchangeName,
-        routingKey,
-        encodeMessage(message, options?.sendType),
-        {
-          headers: prepareHeaders(
-            { isServer: false },
-            options?.sendType,
-            options?.receiveType
-          ),
-          ...options?.publishOptions,
-          replyTo: prefixedReplyQueueName,
-          correlationId: corelationId,
-        }
-      );
-    });
-  }
-
-  public async publishUnknownWaitedReplies(
-    message: Buffer | string | unknown,
-    clientConnection: ClientConnectionRPC,
-    options: ClientRPCOptionsUnknownReplies
-  ) {
-    const { exchangeName, replyQueueName, routingKey } = clientConnection;
-    const prefixedReplyQueueName = `reply.${replyQueueName}`;
-
-    const corelationId = uuidv4();
-    this.messageMap.set(corelationId, new Subject());
-
-    // eslint-disable-next-line no-async-promise-executor
-    return new Promise(async (resolve, reject) => {
-      const allReplies: unknown[] = [];
-
-      if (!this.channelWrapper) {
-        throw new Error('You have to trigger init method first');
-      }
-
-      const clientConsumeFunction = (msg: ConsumeMessage | null) => {
-        const decoded = decodeMessage(msg);
-
-        this.getCorrlationIdSubject(msg?.properties.correlationId).next(
-          prepareResponse(decoded, options?.responseContains)
-        );
-      };
-
-      // eslint-disable-next-line prefer-const
-      let subscription: Subscription;
-
-      const observer: Observer<ClientObservable> = {
-        next: (data) => {
-          options?.handler && options.handler(data);
-          allReplies.push(data.message);
+          options.handler && options.handler(data);
         },
         error: (error: Error) => {
           reject(error);

@@ -50,6 +50,18 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
     }
   );
 
+  await server.registerRPCRoute(
+    {
+      queueName: 'complete-different-queue-123',
+      routingKey,
+      exchangeName,
+    },
+    handler,
+    {
+      replySignature: 'server-3',
+    }
+  );
+
   const response = await client.publishMultipleRPC(
     objectMessage,
     {
@@ -58,12 +70,29 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
       replyQueueName,
     },
     {
-      timeout: 5_000,
-      waitedReplies: 2,
+      timeout: 2_000,
       responseContains: {
         content: true,
         headers: true,
         signature: true,
+      },
+      handler: async (msg) => {
+        let file: number;
+        switch (msg.signature) {
+          case 'server-1':
+            file = await new Promise((resolve) =>
+              setTimeout(() => resolve(123), 1000)
+            );
+            console.log('file', file);
+            console.log('Server-1 Received:', msg);
+            break;
+          case 'server-2':
+            console.log('Server-2 Received:', msg);
+            break;
+          default:
+            await new Promise((r) => setTimeout(r, 1000));
+            console.log('Unknown resource Received', msg);
+        }
       },
     }
   );

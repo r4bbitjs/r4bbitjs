@@ -19,18 +19,12 @@ export type ClientRPCOptions = {
   responseContains?: ResponseContains;
 } & ServerRPCOptions;
 
-export type ClientRPCOptionsMultiple = {
+export type ClientMultipleRPC = {
   receiveType?: MessageType;
   timeout?: number;
   responseContains?: ResponseContains;
-  waitedReplies: number;
-} & ServerRPCOptions;
-
-export type ClientRPCOptionsUnknownReplies = {
-  receiveType?: MessageType;
-  timeout?: number;
-  responseContains?: ResponseContains;
-  handler: (msg: Record<string, unknown>) => void;
+  waitedReplies?: number;
+  handler?: (msg: Record<string, unknown>) => void;
 } & ServerRPCOptions;
 
 export type ClientObservable = {
