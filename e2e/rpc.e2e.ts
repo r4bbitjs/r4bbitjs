@@ -32,14 +32,28 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
       routingKey,
       exchangeName,
     },
-    handler
+    handler,
+    {
+      replySignature: 'server',
+    }
   );
 
-  const response = await client.publishRPCMessage(objectMessage, {
-    exchangeName,
-    routingKey,
-    replyQueueName,
-  });
+  const response = await client.publishRPCMessage(
+    objectMessage,
+    {
+      exchangeName,
+      routingKey,
+      replyQueueName,
+    },
+    {
+      timeout: 2_000,
+      responseContains: {
+        content: true,
+        headers: true,
+        signature: true,
+      },
+    }
+  );
 
   console.log('response', response, typeof response);
 })();

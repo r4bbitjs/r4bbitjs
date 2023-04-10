@@ -6,7 +6,6 @@ import {
 import { ConsumeMessage } from 'amqplib';
 import { EventEmitter } from 'events';
 import { v4 as uuidv4 } from 'uuid';
-import { decodeMessage } from '../Common/decodeMessage';
 import { encodeMessage } from '../Common/encodeMessage';
 import { prepareResponse } from '../Common/prepareResponse';
 import { initRabbit } from '../Init/init';
@@ -79,8 +78,10 @@ export class Client {
     const prefixedReplyQueueName = `reply.${replyQueueName}`;
 
     const clientConsumeFunction = (msg: ConsumeMessage | null) => {
-      const decoded = decodeMessage(msg);
-      this.eventEmitter.emit(msg?.properties.correlationId, decoded);
+      this.eventEmitter.emit(
+        msg?.properties.correlationId,
+        prepareResponse(msg, options?.responseContains)
+      );
     };
 
     await this.channelWrapper.addSetup(async (channel: Channel) => {
@@ -165,7 +166,6 @@ export class Client {
       }
 
       const clientConsumeFunction = (msg: ConsumeMessage | null) => {
-        // TODO: Headers!!!
         this.getCorrlationIdSubject(msg?.properties.correlationId).next(
           prepareResponse(msg, options?.responseContains)
         );
