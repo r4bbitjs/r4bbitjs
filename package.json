@@ -8,7 +8,8 @@
     "lint:fix": "eslint src --ext .ts --fix",
     "e2e": "ts-node ./e2e/server-client.e2e.ts",
     "e2e-rpc": "ts-node ./e2e/rpc.e2e.ts",
-    "e2e-experimental-rpc": "ts-node ./e2e/rpc-experimental.e2e.ts",
+    "e2e-rpc-multiple": "ts-node ./e2e/rpc-multiple.e2e.ts",
+    "e2e-rpc-unknown-replies": "ts-node ./e2e/rpc-unknown-replies.e2e.ts",
     "e2e-experimental-rabbit-debug": "ts-node ./e2e/rpc-experimental.e2e.ts --inspect",
     "test": "jest",
     "initRabbit": "ts-node ./src/Init/init.ts"

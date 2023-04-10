@@ -32,4 +32,5 @@ export type ServerRPCOptions = {
   consumeOptions?: Options.Consume;
   sendType?: MessageType;
   correlationId?: string;
+  replySignature?: string;
 };
