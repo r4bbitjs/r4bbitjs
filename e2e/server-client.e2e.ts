@@ -46,7 +46,10 @@ const checkMessagesDispatch = async (url: ConnectionUrl | ConnectionUrl[]) => {
         routingKey: obj.key,
       },
       handlerFunc,
-      { noAck: false }
+      {
+        consumeOptions: { noAck: false },
+        responseContains: { content: true, headers: true },
+      }
     );
   }
 

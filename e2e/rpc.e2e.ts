@@ -35,6 +35,10 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
     handler,
     {
       replySignature: 'server',
+      responseContains: {
+        content: true,
+        headers: true,
+      },
     }
   );
 

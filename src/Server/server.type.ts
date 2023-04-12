@@ -1,5 +1,6 @@
 import { Options } from 'amqp-connection-manager';
 import { MessageType } from '../Common/types';
+import { ServerResponseContains } from '../Common/types';
 
 export type Handler = (msg: string | Record<string, unknown>) => void;
 
@@ -27,10 +28,16 @@ export type ServerConnection = {
   exchangeName: string;
 };
 
+export type ServerOptions = {
+  consumeOptions?: Options.Consume;
+  responseContains?: ServerResponseContains;
+};
+
 export type ServerRPCOptions = {
   publishOptions?: Options.Publish;
   consumeOptions?: Options.Consume;
   sendType?: MessageType;
   correlationId?: string;
   replySignature?: string;
+  responseContains?: ServerResponseContains;
 };

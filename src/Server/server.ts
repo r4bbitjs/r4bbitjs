@@ -3,8 +3,7 @@ import {
   ChannelWrapper,
   ConnectionUrl,
 } from 'amqp-connection-manager';
-import { ConsumeMessage, Options } from 'amqplib';
-import { decodeMessage } from '../Common/decodeMessage';
+import { ConsumeMessage } from 'amqplib';
 import { encodeMessage } from '../Common/encodeMessage';
 import { prepareHeaders } from '../Common/prepareHeaders';
 import { HEADER_RECEIVE_TYPE } from '../Common/types';
@@ -16,7 +15,9 @@ import {
   RpcHandler,
   ServerConnection,
   ServerRPCOptions,
+  ServerOptions,
 } from './server.type';
+import { prepareResponse } from '../Common/prepareResponse';
 
 class Server {
   private channelWrapper?: ChannelWrapper;
@@ -31,7 +32,7 @@ class Server {
   async registerRoute(
     connection: ServerConnection,
     handlerFunction: Handler | AckHandler,
-    options?: Options.Consume
+    options?: ServerOptions
   ): Promise<void> {
     if (!this.channelWrapper) {
       throw new Error('You have to trigger init method first');
@@ -47,7 +48,7 @@ class Server {
       return () => this.channelWrapper?.nack(consumeMessage);
     };
 
-    const defaultConsumerOptions = options ?? { noAck: false };
+    const defaultConsumerOptions = options?.consumeOptions ?? { noAck: false };
 
     await this.channelWrapper.addSetup(async (channel: Channel) => {
       await channel.assertExchange(exchangeName, 'topic');
@@ -65,15 +66,17 @@ class Server {
             );
           }
 
-          const onMessage = !options?.noAck
+          const onMessage = !options?.consumeOptions?.noAck
             ? (handlerFunction as AckHandler)({
                 ack: simpleAck(msg),
                 nack: simpleNack(msg),
               })
             : (handlerFunction as Handler);
-
-          const decoded = decodeMessage(msg);
-          return onMessage(decoded);
+          const preparedResponse = prepareResponse(
+            msg,
+            options?.responseContains
+          );
+          return onMessage(preparedResponse);
         },
         defaultConsumerOptions
       );
@@ -131,8 +134,11 @@ class Server {
       await channel.consume(
         queueName,
         (consumeMessage) => {
-          const decoded = decodeMessage(consumeMessage);
-          return handlerFunction(reply(consumeMessage))(decoded);
+          const preparedResponse = prepareResponse(consumeMessage, {
+            ...options?.responseContains,
+            signature: false,
+          });
+          return handlerFunction(reply(consumeMessage))(preparedResponse);
         },
         options?.consumeOptions
       );
