@@ -11,8 +11,7 @@ import { prepareResponse } from '../Common/prepareResponse';
 import { initRabbit } from '../Init/init';
 import { InitRabbitOptions } from '../Init/init.type';
 import {
-  ClientConnection,
-  ClientConnectionRPC,
+  ClientOptions,
   ClientRPCOptions,
   ClientObservable,
   ClientMultipleRPC,
@@ -23,36 +22,30 @@ import { Subscription, Subject, Observer } from 'rxjs';
 const DEFAULT_TIMEOUT = 30_000;
 
 export class Client {
-  private channelWrapper?: ChannelWrapper;
+  private _channelWrapper?: ChannelWrapper;
   private eventEmitter = new EventEmitter();
-
   private messageMap = new Map<string, Subject<unknown>>();
 
   public init = async (
     connectionUrls: ConnectionUrl[] | ConnectionUrl,
     options?: InitRabbitOptions
   ): Promise<void> => {
-    this.channelWrapper = await initRabbit(connectionUrls, options);
+    this._channelWrapper = await initRabbit(connectionUrls, options);
   };
 
-  public decodeMessage(message: string, contentType: string | undefined) {
-    if (contentType === 'application/json') {
-      return JSON.parse(message);
-    }
-
-    return message;
-  }
-
-  public async publishMessage(
-    connection: ClientConnection,
-    message: Buffer | string | unknown,
-    options?: ClientRPCOptions
-  ) {
-    if (!this.channelWrapper) {
+  get channelWrapper() {
+    if (!this._channelWrapper) {
       throw new Error('You have to trigger init method first');
     }
 
-    const { exchangeName, routingKey } = connection;
+    return this._channelWrapper;
+  }
+
+  public async publishMessage(
+    message: Buffer | string | unknown,
+    options: ClientOptions
+  ) {
+    const { exchangeName, routingKey } = options;
 
     await this.channelWrapper.publish(
       exchangeName,
@@ -67,14 +60,9 @@ export class Client {
 
   public async publishRPCMessage<ResponseType>(
     message: Buffer | string | unknown,
-    clientConnection: ClientConnectionRPC,
-    options?: ClientRPCOptions
+    options: ClientRPCOptions
   ): Promise<ResponseType> {
-    if (!this.channelWrapper) {
-      throw new Error('You have to trigger init method first');
-    }
-
-    const { exchangeName, replyQueueName, routingKey } = clientConnection;
+    const { exchangeName, replyQueueName, routingKey } = options;
     const prefixedReplyQueueName = `reply.${replyQueueName}`;
 
     const clientConsumeFunction = (msg: ConsumeMessage | null) => {
@@ -104,10 +92,6 @@ export class Client {
         resolve(msg as ResponseType);
       };
       const emitter = this.eventEmitter.once(String(corelationId), listener);
-
-      if (!this.channelWrapper) {
-        throw new Error('You have to trigger init method first');
-      }
 
       setTimeout(() => {
         emitter.removeListener(String(corelationId), listener);
@@ -149,10 +133,9 @@ export class Client {
 
   public async publishMultipleRPC(
     message: Buffer | string | unknown,
-    clientConnection: ClientConnectionRPC,
     options: ClientMultipleRPC
   ) {
-    const { exchangeName, replyQueueName, routingKey } = clientConnection;
+    const { exchangeName, replyQueueName, routingKey } = options;
     const prefixedReplyQueueName = `reply.${replyQueueName}`;
 
     const corelationId = uuidv4();
@@ -161,9 +144,6 @@ export class Client {
     // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
       const allReplies: unknown[] = [];
-      if (!this.channelWrapper) {
-        throw new Error('You have to trigger init method first');
-      }
 
       const clientConsumeFunction = (msg: ConsumeMessage | null) => {
         this.getCorrlationIdSubject(msg?.properties.correlationId).next(
@@ -216,9 +196,6 @@ export class Client {
         });
       });
 
-      if (!this.channelWrapper) {
-        throw new Error('You have to trigger init method first');
-      }
       await this.channelWrapper.publish(
         exchangeName,
         routingKey,

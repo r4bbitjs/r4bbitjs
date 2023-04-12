@@ -50,23 +50,18 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
     }
   );
 
-  const response = await client.publishMultipleRPC(
-    objectMessage,
-    {
-      exchangeName,
-      routingKey,
-      replyQueueName,
+  const response = await client.publishMultipleRPC(objectMessage, {
+    exchangeName,
+    routingKey,
+    replyQueueName,
+    timeout: 5_000,
+    waitedReplies: 2,
+    responseContains: {
+      content: true,
+      headers: true,
+      signature: true,
     },
-    {
-      timeout: 5_000,
-      waitedReplies: 2,
-      responseContains: {
-        content: true,
-        headers: true,
-        signature: true,
-      },
-    }
-  );
+  });
 
   console.log('response', response, typeof response);
 })();

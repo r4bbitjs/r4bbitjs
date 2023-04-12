@@ -29,6 +29,10 @@ class Server {
     this.channelWrapper = await initRabbit(connectionUrls, options);
   };
 
+  public getWrapper(): ChannelWrapper | undefined {
+    return this.channelWrapper;
+  }
+
   async registerRoute(
     connection: ServerConnection,
     handlerFunction: Handler | AckHandler,
