@@ -1,25 +1,28 @@
 import { MessageType } from '../Common/types';
 import { ResponseContains } from '../Common/types';
 import { ServerRPCOptions } from '../Server/server.type';
+import { Options } from 'amqplib';
 
-export type ClientConnection = {
+export type ClientOptions = {
   exchangeName: string;
   routingKey: string;
-};
-
-export type ClientConnectionRPC = {
-  exchangeName: string;
-  routingKey: string;
-  replyQueueName: string;
+  sendType?: MessageType;
+  publishOptions?: Options.Publish;
 };
 
 export type ClientRPCOptions = {
+  exchangeName: string;
+  routingKey: string;
+  replyQueueName: string;
   receiveType?: MessageType;
   timeout?: number;
   responseContains?: ResponseContains;
 } & ServerRPCOptions;
 
 export type ClientMultipleRPC = {
+  exchangeName: string;
+  routingKey: string;
+  replyQueueName: string;
   receiveType?: MessageType;
   timeout?: number;
   responseContains?: ResponseContains;

@@ -12,6 +12,8 @@ export type ResponseContains = {
   content?: boolean;
 };
 
+export type ServerResponseContains = Omit<ResponseContains, 'signature'>;
+
 export type MessageType = 'json' | 'string' | 'object';
 
 export const HEADER_SEND_TYPE = 'x-send-type';

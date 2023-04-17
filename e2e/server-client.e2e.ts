@@ -46,25 +46,21 @@ const checkMessagesDispatch = async (url: ConnectionUrl | ConnectionUrl[]) => {
         routingKey: obj.key,
       },
       handlerFunc,
-      { noAck: false }
+      {
+        consumeOptions: { noAck: false },
+        responseContains: { content: true, headers: true },
+      }
     );
   }
 
   let counter = 0;
   setInterval(async () => {
-    // const message = {
-    //   value: 'testMessage: ' + counter.toString()
-    // };
-
-    // const message = 'i am test message'
     const message = 123;
-    await client.publishMessage(
-      { exchangeName: 'exchange1', routingKey: 'something.test2' },
-      message,
-      {
-        sendType: 'string',
-      }
-    );
+    await client.publishMessage(message, {
+      exchangeName: 'exchange1',
+      routingKey: 'something.test2',
+      sendType: 'string',
+    });
     counter++;
     console.log('sending message: ' + counter);
   }, 1000);
@@ -78,9 +74,5 @@ const checkMessagesDispatch = async (url: ConnectionUrl | ConnectionUrl[]) => {
     objectUrl2,
   ];
 
-  // for (const connectionObject of connectionObjects) {
-  //   await checkMessagesDispatch(connectionObject);
-  // }
-
-  await checkMessagesDispatch(['amqp://localhost', localUrl, objectUrl]);
+  await checkMessagesDispatch(connectionObjects);
 })();
