@@ -1,8 +1,4 @@
-import {
-  Channel,
-  ChannelWrapper,
-  ConnectionUrl,
-} from 'amqp-connection-manager';
+import { ChannelWrapper, ConnectionUrl } from 'amqp-connection-manager';
 import { ConsumeMessage } from 'amqplib';
 import { encodeMessage } from '../Common/encodeMessage';
 import { prepareHeaders } from '../Common/prepareHeaders';
@@ -17,6 +13,7 @@ import {
   ServerRPCOptions,
   ServerOptions,
 } from './server.type';
+import { ConnectionSet } from '../Common/cache';
 import { prepareResponse } from '../Common/prepareResponse';
 
 class Server {
@@ -53,38 +50,39 @@ class Server {
     };
 
     const defaultConsumerOptions = options?.consumeOptions ?? { noAck: false };
+    await ConnectionSet.assert(
+      this.channelWrapper,
+      exchangeName,
+      queueName,
+      routingKey
+    );
 
-    await this.channelWrapper.addSetup(async (channel: Channel) => {
-      await channel.assertExchange(exchangeName, 'topic');
-      await channel.assertQueue(queueName);
-      await channel.bindQueue(queueName, exchangeName, routingKey);
-      await channel.consume(
-        queueName,
-        (msg) => {
-          if (msg === null) {
-            throw new Error(
-              'Channel has ben canceled,' +
-                ' ref:' +
-                ' https://amqp-node.github.io/amqplib/channel_api.html' +
-                '#channel_consume'
-            );
-          }
-
-          const onMessage = !options?.consumeOptions?.noAck
-            ? (handlerFunction as AckHandler)({
-                ack: simpleAck(msg),
-                nack: simpleNack(msg),
-              })
-            : (handlerFunction as Handler);
-          const preparedResponse = prepareResponse(
-            msg,
-            options?.responseContains
+    await this.channelWrapper.consume(
+      queueName,
+      (msg) => {
+        if (msg === null) {
+          throw new Error(
+            'Channel has ben canceled,' +
+              ' ref:' +
+              ' https://amqp-node.github.io/amqplib/channel_api.html' +
+              '#channel_consume'
           );
-          return onMessage(preparedResponse);
-        },
-        defaultConsumerOptions
-      );
-    });
+        }
+
+        const onMessage = !options?.consumeOptions?.noAck
+          ? (handlerFunction as AckHandler)({
+              ack: simpleAck(msg),
+              nack: simpleNack(msg),
+            })
+          : (handlerFunction as Handler);
+        const preparedResponse = prepareResponse(
+          msg,
+          options?.responseContains
+        );
+        return onMessage(preparedResponse);
+      },
+      defaultConsumerOptions
+    );
   }
 
   async registerRPCRoute(
@@ -131,22 +129,24 @@ class Server {
         this.channelWrapper.ack.call(this.channelWrapper, consumedMessage);
       };
 
-    await this.channelWrapper.addSetup(async (channel: Channel) => {
-      await channel.assertExchange(exchangeName, 'topic');
-      await channel.assertQueue(queueName);
-      await channel.bindQueue(queueName, exchangeName, routingKey);
-      await channel.consume(
-        queueName,
-        (consumeMessage) => {
-          const preparedResponse = prepareResponse(consumeMessage, {
-            ...options?.responseContains,
-            signature: false,
-          });
-          return handlerFunction(reply(consumeMessage))(preparedResponse);
-        },
-        options?.consumeOptions
-      );
-    });
+    await ConnectionSet.assert(
+      this.channelWrapper,
+      exchangeName,
+      queueName,
+      routingKey
+    );
+
+    await this.channelWrapper.consume(
+      queueName,
+      (consumeMessage) => {
+        const preparedResponse = prepareResponse(consumeMessage, {
+          ...options?.responseContains,
+          signature: false,
+        });
+        return handlerFunction(reply(consumeMessage))(preparedResponse);
+      },
+      options?.consumeOptions
+    );
   }
 }
 

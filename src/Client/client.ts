@@ -1,8 +1,4 @@
-import {
-  Channel,
-  ChannelWrapper,
-  ConnectionUrl,
-} from 'amqp-connection-manager';
+import { ChannelWrapper, ConnectionUrl } from 'amqp-connection-manager';
 import { ConsumeMessage } from 'amqplib';
 import { EventEmitter } from 'events';
 import { v4 as uuidv4 } from 'uuid';
@@ -18,6 +14,7 @@ import {
 } from './client.type';
 import { prepareHeaders } from '../Common/prepareHeaders';
 import { Subscription, Subject, Observer } from 'rxjs';
+import { ConnectionSet } from '../Common/cache';
 
 const DEFAULT_TIMEOUT = 30_000;
 
@@ -47,6 +44,8 @@ export class Client {
   ) {
     const { exchangeName, routingKey } = options;
 
+    await ConnectionSet.assert(this.channelWrapper, exchangeName, '', '');
+
     await this.channelWrapper.publish(
       exchangeName,
       routingKey,
@@ -72,18 +71,21 @@ export class Client {
       );
     };
 
-    await this.channelWrapper.addSetup(async (channel: Channel) => {
-      await channel.assertQueue(prefixedReplyQueueName);
-      await channel.bindQueue(
-        prefixedReplyQueueName,
-        exchangeName,
-        prefixedReplyQueueName
-      );
-      await channel.consume(prefixedReplyQueueName, clientConsumeFunction, {
+    await ConnectionSet.assert(
+      this.channelWrapper,
+      exchangeName,
+      prefixedReplyQueueName,
+      prefixedReplyQueueName
+    );
+
+    await this.channelWrapper.consume(
+      prefixedReplyQueueName,
+      clientConsumeFunction,
+      {
         ...options?.consumeOptions,
         noAck: true,
-      });
-    });
+      }
+    );
 
     // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
@@ -183,18 +185,21 @@ export class Client {
           observer
         );
 
-      await this.channelWrapper.addSetup(async (channel: Channel) => {
-        await channel.assertQueue(prefixedReplyQueueName);
-        await channel.bindQueue(
-          prefixedReplyQueueName,
-          exchangeName,
-          prefixedReplyQueueName
-        );
-        await channel.consume(prefixedReplyQueueName, clientConsumeFunction, {
+      await ConnectionSet.assert(
+        this.channelWrapper,
+        exchangeName,
+        prefixedReplyQueueName,
+        prefixedReplyQueueName
+      );
+
+      await this.channelWrapper.consume(
+        prefixedReplyQueueName,
+        clientConsumeFunction,
+        {
           ...options?.consumeOptions,
           noAck: true,
-        });
-      });
+        }
+      );
 
       await this.channelWrapper.publish(
         exchangeName,

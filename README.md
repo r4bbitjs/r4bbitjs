@@ -2,7 +2,6 @@
 
 # TODO:
 - sonar-cloud
-- exchange and queue asserttion utility function 
 - GitHub packages for versioning 
     -- automatic semantic versioning
 - Documentation

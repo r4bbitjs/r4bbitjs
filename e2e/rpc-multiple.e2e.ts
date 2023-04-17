@@ -4,6 +4,8 @@ import { Reply, RpcHandler } from '../src/Server/server.type';
 
 const localUrl = 'amqp://guest:guest@localhost:5672/';
 
+const getRandomIntegral = () => Math.floor(Math.random() * 100);
+
 (async () => {
   const server = await getServer(localUrl);
   const client = await getClient(localUrl);
@@ -20,11 +22,11 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
       }, processingTime);
     };
 
-  const exchangeName = 'testExchange';
+  const exchangeName = `exchange-${getRandomIntegral()}`;
   const objectMessage = { message: 'OurMessage' };
   const routingKey = 'testRoutingKey';
-  const serverQueueName = 'testServerQueue';
-  const replyQueueName = 'testReplyQueue';
+  const serverQueueName = `queue-${getRandomIntegral()}`;
+  const replyQueueName = `queue-${getRandomIntegral()}`;
 
   await server.registerRPCRoute(
     {
