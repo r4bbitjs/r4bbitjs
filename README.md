@@ -1,6 +1,9 @@
 # Rabbit-Wrapper
 
 # TODO:
+- Add loger in order to warn onClose and retry connection after some interval
+- When rabbitmq does not exist warn the client
+- Gracefully close the connection
 - sonar-cloud
 - GitHub packages for versioning 
     -- automatic semantic versioning

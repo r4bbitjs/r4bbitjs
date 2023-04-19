@@ -1,58 +1,131 @@
-import { prepareHeaders } from '../Common/prepareHeaders';
-const mockPublishFn = jest.fn();
-const mockInitRabbit = jest.fn().mockReturnValueOnce({
-  publish: mockPublishFn,
-});
+import { initRabbit } from '../Init/init';
+import { InitRabbitOptions } from '../Init/init.type';
+import { ConnectionUrl } from 'amqp-connection-manager';
+import { getClient } from './client';
+import { ConnectionSet } from '../Common/cache';
+import { EventEmitter } from 'events';
+jest.mock('../Init/init', () => ({
+  initRabbit: jest.fn(),
+}));
+jest.mock('../Common/cache', () => ({
+  ConnectionSet: {
+    assert: jest.fn(),
+  },
+}));
+jest.mock('events', () => ({
+  ...jest.requireActual('events'),
+  EventEmitter: jest.fn(),
+}));
 
-jest.mock('../Init/init', () => {
-  return {
-    initRabbit: mockInitRabbit,
+const connectionUrls: ConnectionUrl | ConnectionUrl[] = '';
+const options: InitRabbitOptions = {};
+
+describe('Client tests', () => {
+  const channelWrapper = {
+    publish: jest.fn(),
   };
-});
 
-import { Client, getClient } from './client';
+  (initRabbit as jest.Mock).mockResolvedValue(channelWrapper);
 
-describe('Client object testing', () => {
-  it('should call init during client instantiation', async () => {
-    // given
-    const connectionUrl = 'fake-connection-url';
-
-    // when
-    await getClient(connectionUrl);
-
-    // then
-    expect(mockInitRabbit).toHaveBeenCalled();
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
-  it('should throw an error when publishMessage is triggerd before init', async () => {
-    // given
-    const exchangeName = 'test-exchange';
-    const key = 'test-key';
-    const message = 'test-message';
-    const expectedError = new Error('You have to trigger init method first');
+  it('should create a new client as a singleton', async () => {
+    // when
+    await getClient(connectionUrls, options);
+    await getClient(connectionUrls, options);
 
-    // when & then
-    const client = new Client();
+    // then
+    expect(initRabbit).toBeCalledTimes(1);
+  });
+
+  it('should call assert and publish methods', async () => {
+    const client = await getClient(connectionUrls, options);
+
+    // when
+    await client.publishMessage('test', {
+      exchangeName: 'test',
+      routingKey: 'test',
+    });
+
+    // then
+    expect(ConnectionSet.assert).toBeCalled();
+  });
+});
+
+describe('RPC tests', () => {
+  it('should trigger consume method while RPC call', async () => {
+    // given
+    const channelWrapper = {
+      publish: jest.fn(),
+      consume: jest.fn(),
+    };
+
+    (initRabbit as jest.Mock).mockResolvedValue(channelWrapper);
+    let timeout: NodeJS.Timeout;
+    (EventEmitter as unknown as jest.Mock).mockReturnValue({
+      once: jest.fn().mockImplementation((_, resolve) => {
+        timeout = setTimeout(() => {
+          resolve('response XYZ');
+        }, 2_000);
+
+        return {
+          removeListener: () => {
+            timeout && clearTimeout(timeout);
+          },
+        };
+      }),
+    });
+    const message = { message: 'testMessage' };
+
+    // when
+    const client = await getClient(connectionUrls, options);
+    await client.publishRPCMessage(message, {
+      exchangeName: 'test',
+      routingKey: 'test',
+      replyQueueName: 'test',
+      timeout: 3_000,
+    });
+
+    // then
+    expect(ConnectionSet.assert).toBeCalled();
+    expect(channelWrapper.consume).toBeCalled();
+  });
+
+  it('should trigger timeout', async () => {
+    // given
+    const channelWrapper = {
+      publish: jest.fn(),
+      consume: jest.fn(),
+    };
+
+    (initRabbit as jest.Mock).mockResolvedValue(channelWrapper);
+    (EventEmitter as unknown as jest.Mock).mockReturnValue({
+      once: jest.fn().mockReturnValue({
+        removeListener: jest.fn(),
+      }),
+    });
+
+    const message = { message: 'testMessage' };
+
+    // when
+    const client = await getClient(connectionUrls, options);
     await expect(
-      client.publishMessage({ exchangeName, routingKey: key }, message)
-    ).rejects.toEqual(expectedError);
-  });
-
-  it('should publish a message when publishMessage functions is called', async () => {
-    // given
-    const exchangeName = 'test-exchange';
-    const key = 'test-key';
-    const message = 'test-message';
-    const client = await getClient('test-connection-url');
-
-    // when
-    client.publishMessage({ exchangeName, routingKey: key }, message, {
-      sendType: 'string',
-    });
+      client.publishRPCMessage(message, {
+        exchangeName: 'test',
+        routingKey: 'test',
+        replyQueueName: 'test',
+        timeout: 1_000,
+      })
+    ).rejects.toEqual('timeout of 1000ms occured for the given rpc message');
 
     // then
-    expect(mockPublishFn).toHaveBeenCalledWith(exchangeName, key, message, {
-      headers: prepareHeaders('string'),
-    });
+    expect(ConnectionSet.assert).toBeCalled();
   });
 });
+
+// publishing RPC - consume should be called
+// publishing RPC - timeout (1 msg out of 2)
+// publishing RPC - 3 responses out of 2
+// publishng RPC - handler + unknown responces case (if handler has been triggered with proper args)

@@ -90,15 +90,20 @@ export class Client {
     // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
       const corelationId = uuidv4();
+
       const listener = (msg: ConsumeMessage) => {
+        clearTimeout(timeout);
         resolve(msg as ResponseType);
       };
       const emitter = this.eventEmitter.once(String(corelationId), listener);
 
-      setTimeout(() => {
+      const timeoutValue = options?.timeout ?? DEFAULT_TIMEOUT;
+      const timeout = setTimeout(() => {
         emitter.removeListener(String(corelationId), listener);
-        reject('timeout');
-      }, options?.timeout ?? DEFAULT_TIMEOUT);
+        reject(
+          `timeout of ${timeoutValue}ms occured for the given rpc message`
+        );
+      }, timeoutValue);
       await this.channelWrapper.publish(
         exchangeName,
         routingKey,
