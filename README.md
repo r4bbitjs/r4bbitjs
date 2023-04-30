@@ -1,6 +1,7 @@
 # Rabbit-Wrapper
 
 # TODO:
+- Add a connection close function so that users can actually close the connection
 - Add loger in order to warn onClose and retry connection after some interval
 - When rabbitmq does not exist warn the client
 - Gracefully close the connection
