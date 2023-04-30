@@ -3,7 +3,6 @@ import { InitRabbitOptions } from '../Init/init.type';
 import { ConnectionUrl } from 'amqp-connection-manager';
 import { getClient } from './client';
 import { ConnectionSet } from '../Common/cache';
-import { EventEmitter } from 'events';
 jest.mock('../Init/init', () => ({
   initRabbit: jest.fn(),
 }));
@@ -12,9 +11,12 @@ jest.mock('../Common/cache', () => ({
     assert: jest.fn(),
   },
 }));
+const onceMock = jest.fn();
 jest.mock('events', () => ({
   ...jest.requireActual('events'),
-  EventEmitter: jest.fn(),
+  EventEmitter: jest.fn().mockImplementation(() => ({
+    once: onceMock,
+  })),
 }));
 
 const connectionUrls: ConnectionUrl | ConnectionUrl[] = '';
@@ -29,6 +31,7 @@ describe('Client tests', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.resetModules();
   });
 
   it('should create a new client as a singleton', async () => {
@@ -55,27 +58,39 @@ describe('Client tests', () => {
 });
 
 describe('RPC tests', () => {
+  const channelWrapper = {
+    publish: jest.fn(),
+    consume: jest.fn(),
+  };
+
+  (initRabbit as jest.Mock).mockResolvedValue(channelWrapper);
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.resetModules();
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+    jest.resetModules();
+  });
+
   it('should trigger consume method while RPC call', async () => {
     // given
-    const channelWrapper = {
-      publish: jest.fn(),
-      consume: jest.fn(),
-    };
-
     (initRabbit as jest.Mock).mockResolvedValue(channelWrapper);
     let timeout: NodeJS.Timeout;
-    (EventEmitter as unknown as jest.Mock).mockReturnValue({
-      once: jest.fn().mockImplementation((_, resolve) => {
-        timeout = setTimeout(() => {
-          resolve('response XYZ');
-        }, 2_000);
 
-        return {
-          removeListener: () => {
-            timeout && clearTimeout(timeout);
-          },
-        };
-      }),
+    onceMock.mockReset();
+    onceMock.mockImplementation((_, resolve) => {
+      timeout = setTimeout(() => {
+        resolve('response XYZ');
+      }, 2_000);
+
+      return {
+        removeListener: () => {
+          timeout && clearTimeout(timeout);
+        },
+      };
     });
     const message = { message: 'testMessage' };
 
@@ -95,16 +110,10 @@ describe('RPC tests', () => {
 
   it('should trigger timeout', async () => {
     // given
-    const channelWrapper = {
-      publish: jest.fn(),
-      consume: jest.fn(),
-    };
-
     (initRabbit as jest.Mock).mockResolvedValue(channelWrapper);
-    (EventEmitter as unknown as jest.Mock).mockReturnValue({
-      once: jest.fn().mockReturnValue({
-        removeListener: jest.fn(),
-      }),
+    onceMock.mockReset();
+    onceMock.mockReturnValue({
+      removeListener: jest.fn(),
     });
 
     const message = { message: 'testMessage' };
@@ -124,8 +133,3 @@ describe('RPC tests', () => {
     expect(ConnectionSet.assert).toBeCalled();
   });
 });
-
-// publishing RPC - consume should be called
-// publishing RPC - timeout (1 msg out of 2)
-// publishing RPC - 3 responses out of 2
-// publishng RPC - handler + unknown responces case (if handler has been triggered with proper args)

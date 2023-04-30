@@ -9,8 +9,8 @@ jest.mock('../Init/init', () => {
   };
 });
 
-import { Options } from 'amqplib';
 import { getServer } from './server';
+import { ServerOptions } from '../Server/server.type';
 
 describe('Server tests', () => {
   it('should call init during server instantiation', async () => {
@@ -30,7 +30,7 @@ describe('Server tests', () => {
     const queueName = 'test-queue';
     const exchangeName = 'test-exchange';
     const routingKey = 'test-routing-key';
-    const options: Options.Consume = {
+    const options: ServerOptions = {
       noAck: true,
     };
     const handlerFunction = jest.fn();
