@@ -4,6 +4,7 @@ const channelWrapper = {
   addSetup: mockAddSetup,
   consume: consumeMock,
   publish: jest.fn(),
+  ack: jest.fn(),
 };
 const assertMock = jest.fn();
 
@@ -84,7 +85,6 @@ describe('Server tests', () => {
     const handlerFunc: AckHandler =
       ({ ack }) =>
       (msg: string | object) => {
-        console.log('HANDLING...');
         if (!msg) return;
         if (!ack) return;
 
