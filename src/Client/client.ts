@@ -223,6 +223,10 @@ export class Client {
       );
     });
   }
+
+  public async close() {
+    await this.channelWrapper.close();
+  }
 }
 
 let client: Client;

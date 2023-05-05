@@ -1,13 +1,18 @@
-import { getServer } from '../src/Server/server';
+import { getServer, Server } from '../src/Server/server';
 import { Reply, RpcHandler } from '../src/Server/server.type';
-import { getClient } from '../src/Client/client';
+import { getClient, Client } from '../src/Client/client';
 
 describe('e2e tests', () => {
-  it('should register a basic route and receive a message', async () => {
-    const localUrl = 'amqp://guest:guest@localhost:5672/';
-    const server = await getServer(localUrl);
-    const client = await getClient(localUrl);
+  const localUrl = 'amqp://guest:guest@localhost:5672/';
+  let server: Server;
+  let client: Client;
 
+  beforeAll(async () => {
+    server = await getServer(localUrl);
+    client = await getClient(localUrl);
+  });
+
+  it('should register a basic route and receive a message', async () => {
     const handler: RpcHandler =
       (reply: Reply) => (msg: Record<string, unknown> | string) => {
         const processingTime = 500;
@@ -68,5 +73,7 @@ describe('e2e tests', () => {
     };
 
     expect(response).toEqual(expectedResponse);
+    await server.close();
+    await client.close();
   });
 });

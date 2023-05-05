@@ -16,7 +16,7 @@ import {
 import { ConnectionSet } from '../Common/cache';
 import { prepareResponse } from '../Common/prepareResponse';
 
-class Server {
+export class Server {
   private channelWrapper?: ChannelWrapper;
 
   public init = async (
@@ -26,7 +26,11 @@ class Server {
     this.channelWrapper = await initRabbit(connectionUrls, options);
   };
 
-  public getWrapper(): ChannelWrapper | undefined {
+  public getWrapper(): ChannelWrapper {
+    if (!this.channelWrapper) {
+      throw new Error('You have to trigger init method first');
+    }
+
     return this.channelWrapper;
   }
 
@@ -152,6 +156,11 @@ class Server {
       },
       options?.consumeOptions
     );
+  }
+
+  async close() {
+    const channelWrapper = this.getWrapper();
+    await channelWrapper.close();
   }
 }
 

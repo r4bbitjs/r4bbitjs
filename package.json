@@ -11,7 +11,7 @@
     "e2e:rpc-multiple": "ts-node ./e2e/rpc-multiple.e2e.ts",
     "e2e:rpc-unknown-replies": "ts-node ./e2e/rpc-unknown-replies.e2e.ts",
     "e2e:experimental-rabbit-debug": "ts-node ./e2e/rpc-experimental.e2e.ts --inspect",
-    "e2e:all": "jest ./e2e",
+    "e2e:all": "jest --detectOpenHandles ./e2e",
     "test": "jest ./src",
     "initRabbit": "ts-node ./src/Init/init.ts"
   },
