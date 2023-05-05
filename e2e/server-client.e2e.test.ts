@@ -4,7 +4,7 @@ import { getClient } from '../src/Client/client';
 
 describe('e2e tests', () => {
   it('should register a basic route and receive a message', async () => {
-    const localUrl = 'amqp://guest:guest@localhost:1883/';
+    const localUrl = 'amqp://guest:guest@localhost:5672/';
     const server = await getServer(localUrl);
     const client = await getClient(localUrl);
 
