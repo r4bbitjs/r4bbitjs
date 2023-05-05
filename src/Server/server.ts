@@ -60,6 +60,7 @@ class Server {
     await this.channelWrapper.consume(
       queueName,
       (msg) => {
+        // if message null
         if (msg === null) {
           throw new Error(
             'Channel has ben canceled,' +
@@ -69,16 +70,20 @@ class Server {
           );
         }
 
+        // if in options ack => ack !== undef (with acknowledgment)
+        // if in options nack => ack === undef (no acknowledgment)
         const onMessage = !options?.consumeOptions?.noAck
           ? (handlerFunction as AckHandler)({
               ack: simpleAck(msg),
               nack: simpleNack(msg),
             })
           : (handlerFunction as Handler);
+        // if in options responseContains => prepareResponse
         const preparedResponse = prepareResponse(
           msg,
           options?.responseContains
         );
+        // if preparedResponse pass to the handlerFunc
         return onMessage(preparedResponse);
       },
       defaultConsumerOptions

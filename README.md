@@ -1,12 +1,19 @@
 # Rabbit-Wrapper
 
 # TODO:
+- Add a connection close function so that users can actually close the connection
+- Add loger in order to warn onClose and retry connection after some interval
+- When rabbitmq does not exist warn the client
+- Gracefully close the connection
 - sonar-cloud
 - GitHub packages for versioning 
     -- automatic semantic versioning
 - Documentation
     - example
 - GitHub Pages
+- Add timeout on establishing connection with rabbit 
+    (eg. should throw an arror when there is no active RabbitMQ service)
+- Create a workflow that installs rabbitmq and write e2e tests that actually test the behaviour
 
 
 # Multiple Replies:
