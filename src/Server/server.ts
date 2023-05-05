@@ -160,6 +160,7 @@ export class Server {
 
   async close() {
     const channelWrapper = this.getWrapper();
+    await channelWrapper.cancelAll();
     await channelWrapper.close();
   }
 }

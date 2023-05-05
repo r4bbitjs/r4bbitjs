@@ -225,6 +225,7 @@ export class Client {
   }
 
   public async close() {
+    await this.channelWrapper.cancelAll();
     await this.channelWrapper.close();
   }
 }
