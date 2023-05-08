@@ -1,19 +1,15 @@
-import { getServer, Server } from '../src/Server/server';
+import { getClient } from '../src/Client/client';
+import { getServer } from '../src/Server/server';
 import { Reply, RpcHandler } from '../src/Server/server.type';
-import { getClient, Client } from '../src/Client/client';
 import path from 'path';
 
-describe('e2e tests', () => {
+describe('rpc e2e tests', () => {
   const localUrl = 'amqp://guest:guest@localhost:5672/';
-  let server: Server;
-  let client: Client;
-
-  beforeAll(async () => {
-    server = await getServer(localUrl);
-    client = await getClient(localUrl);
-  });
 
   it('should register a basic route and receive a message', async () => {
+    const server = await getServer(localUrl);
+    const client = await getClient(localUrl);
+
     const handler: RpcHandler =
       (reply: Reply) => (msg: Record<string, unknown> | string) => {
         const processingTime = 500;
@@ -21,6 +17,7 @@ describe('e2e tests', () => {
           if (!msg) {
             return;
           }
+          console.log('incomin message', msg);
           await reply((msg as { content: string }).content);
         }, processingTime);
       };
@@ -62,19 +59,10 @@ describe('e2e tests', () => {
       }
     );
 
-    const expectedResponse = {
-      content: {
-        message: 'OurMessage',
-      },
-      headers: {
-        'x-reply-signature': 'server',
-        'x-send-type': 'json',
-      },
+    expect(response).toEqual({
+      content: { message: 'OurMessage' },
+      headers: { 'x-reply-signature': 'server', 'x-send-type': 'json' },
       signature: 'server',
-    };
-
-    expect(response).toEqual(expectedResponse);
-    await server.close();
-    await client.close();
+    });
   });
 });
