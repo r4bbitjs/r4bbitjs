@@ -6,7 +6,7 @@ export class ConnectionSet {
   private static serialize = (exchange: string, queue = '', routingKey = '') =>
     `${exchange}-*-${queue}-*-${routingKey}`;
 
-  public static isCacheHit = (
+  private static isCacheHit = (
     exchange: string,
     queue = '',
     routingKey = ''
@@ -16,7 +16,7 @@ export class ConnectionSet {
     return ConnectionSet.connectionSet.has(key);
   };
 
-  public static setCache = (
+  private static setCache = (
     exchange: string,
     queue = '',
     routingKey = ''
@@ -41,14 +41,15 @@ export class ConnectionSet {
     queue = '',
     routingKey = ''
   ): Promise<void> => {
-    if (!this.isCacheHit(exchange, queue, routingKey)) {
-      await channelWrapper.assertExchange(exchange, 'topic');
-
-      if (queue) {
-        await channelWrapper.assertQueue(queue);
-        await channelWrapper.bindQueue(queue, exchange, routingKey);
-      }
+    if (this.isCacheHit(exchange, queue, routingKey)) {
       return;
+    }
+
+    await channelWrapper.assertExchange(exchange, 'topic');
+
+    if (queue) {
+      await channelWrapper.assertQueue(queue);
+      await channelWrapper.bindQueue(queue, exchange, routingKey);
     }
 
     this.setCache(exchange, queue, routingKey);

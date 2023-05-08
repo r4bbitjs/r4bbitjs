@@ -12,9 +12,7 @@ export const decodeMessage = (consumeMessage: ConsumeMessage | null) => {
     case 'json':
       return JSON.parse(content);
     case 'string':
-      return content;
     case 'object':
-      return content;
     default:
       return content;
   }
