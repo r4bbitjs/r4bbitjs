@@ -1,4 +1,4 @@
-name: Rabbit e2e tests
+name: Tests Workflow
 
 on:
   workflow_dispatch:
@@ -36,4 +36,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
       - run: pnpm install
-      - run: pnpm e2e:all
+      - name: Run e2e tests
+        run: pnpm e2e:all
+      - name: Run unit tests
+        run: pnpm test
