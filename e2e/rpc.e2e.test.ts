@@ -25,8 +25,8 @@ describe('rpc e2e tests', () => {
     const exchangeName = path.basename(__filename);
     const objectMessage = { message: 'OurMessage' };
     const routingKey = path.basename(__filename) + 'testRoutingKey';
-    const serverQueueName = 'testServerQueue';
-    const replyQueueName = 'testReplyQueue';
+    const serverQueueName = path.basename(__filename) + 'testServerQueue';
+    const replyQueueName = path.basename(__filename) + 'testReplyQueue';
 
     await server.registerRPCRoute(
       {

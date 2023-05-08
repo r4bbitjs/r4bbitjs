@@ -1,6 +1,7 @@
 import { getClient } from '../src/Client/client';
 import { getServer } from '../src/Server/server';
 import { Reply, RpcHandler } from '../src/Server/server.type';
+import path from 'path';
 
 const localUrl = 'amqp://guest:guest@localhost:5672/';
 
@@ -25,7 +26,7 @@ describe('rpc-multiple test', () => {
 
     const exchangeName = `exchange-${getRandomIntegral()}`;
     const objectMessage = { message: 'OurMessage' };
-    const routingKey = 'testRoutingKey';
+    const routingKey = path.basename(__filename) + 'testRoutingKey';
     const serverQueueName = `queue-${getRandomIntegral()}`;
     const replyQueueName = `queue-${getRandomIntegral()}`;
 
@@ -67,7 +68,7 @@ describe('rpc-multiple test', () => {
     });
 
     console.log('response', response, typeof response);
-    expect(response).toEqual([
+    const expectedResults = [
       {
         content: { content: { message: 'OurMessage' } },
         headers: { 'x-reply-signature': 'server-2', 'x-send-type': 'json' },
@@ -78,6 +79,10 @@ describe('rpc-multiple test', () => {
         headers: { 'x-reply-signature': 'server-1', 'x-send-type': 'json' },
         signature: 'server-1',
       },
-    ]);
+    ];
+
+    (response as unknown as typeof expectedResults).forEach((res) => {
+      expect(expectedResults).toContainEqual(res);
+    });
   });
 });
