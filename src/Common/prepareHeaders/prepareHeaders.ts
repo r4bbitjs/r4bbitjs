@@ -3,14 +3,18 @@ import {
   HEADER_RECEIVE_TYPE,
   MessageType,
   HEADER_REPLY_SIGNATURE,
-} from './types';
+} from '../types';
 
-export const prepareHeaders = (
-  { isServer, signature }: { isServer: boolean; signature?: string },
-  sendType?: MessageType,
-  receiveType?: MessageType
-) => {
+export type HeadersParams = {
+  isServer: boolean;
+  signature?: string;
+  sendType?: MessageType;
+  receiveType?: MessageType;
+};
+
+export const prepareHeaders = (headersParams: HeadersParams) => {
   const defaultMsgType = 'json';
+  const { isServer, signature, sendType, receiveType } = headersParams;
 
   if (isServer) {
     return {

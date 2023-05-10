@@ -26,7 +26,7 @@ describe('Cache tests', () => {
   });
 
   it('should do assertions just once even if we call it with the same parameters twice', async () => {
-    const exchangeName = 'testExchange';
+    const exchangeName = 'anotherTestExchange';
     const queueName = 'testQueue';
     const routingKey = 'testRoutingKey';
 

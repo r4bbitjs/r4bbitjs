@@ -1,6 +1,6 @@
 import { decodeMessage } from './decodeMessage';
 import { ConsumeMessage } from 'amqplib';
-import { HEADER_SEND_TYPE } from './types';
+import { HEADER_SEND_TYPE } from '../types';
 
 describe('decodeMessage', () => {
   it('should decode a string message', () => {

@@ -2,8 +2,8 @@ import { ChannelWrapper, ConnectionUrl } from 'amqp-connection-manager';
 import { ConsumeMessage } from 'amqplib';
 import { EventEmitter } from 'events';
 import { v4 as uuidv4 } from 'uuid';
-import { encodeMessage } from '../Common/encodeMessage';
-import { prepareResponse } from '../Common/prepareResponse';
+import { encodeMessage } from '../Common/encodeMessage/encodeMessage';
+import { prepareResponse } from '../Common/prepareResponse/prepareResponse';
 import { initRabbit } from '../Init/init';
 import { InitRabbitOptions } from '../Init/init.type';
 import {
@@ -12,9 +12,9 @@ import {
   ClientObservable,
   ClientMultipleRPC,
 } from './client.type';
-import { prepareHeaders } from '../Common/prepareHeaders';
+import { prepareHeaders } from '../Common/prepareHeaders/prepareHeaders';
 import { Subscription, Subject, Observer } from 'rxjs';
-import { ConnectionSet } from '../Common/cache';
+import { ConnectionSet } from '../Common/cache/cache';
 
 const DEFAULT_TIMEOUT = 30_000;
 
@@ -51,7 +51,10 @@ export class Client {
       routingKey,
       encodeMessage(message, options?.sendType),
       {
-        headers: prepareHeaders({ isServer: false }, options?.sendType),
+        headers: prepareHeaders({
+          isServer: false,
+          sendType: options?.sendType,
+        }),
         ...options?.publishOptions,
       }
     );
@@ -109,11 +112,11 @@ export class Client {
         routingKey,
         encodeMessage(message, options?.sendType),
         {
-          headers: prepareHeaders(
-            { isServer: false },
-            options?.sendType,
-            options?.receiveType
-          ),
+          headers: prepareHeaders({
+            isServer: false,
+            sendType: options?.sendType,
+            receiveType: options?.receiveType,
+          }),
           ...options?.publishOptions,
           replyTo: prefixedReplyQueueName,
           correlationId: corelationId,
@@ -211,11 +214,11 @@ export class Client {
         routingKey,
         encodeMessage(message, options?.sendType),
         {
-          headers: prepareHeaders(
-            { isServer: false },
-            options?.sendType,
-            options?.receiveType
-          ),
+          headers: prepareHeaders({
+            isServer: false,
+            sendType: options?.sendType,
+            receiveType: options?.receiveType,
+          }),
           ...options?.publishOptions,
           replyTo: prefixedReplyQueueName,
           correlationId: corelationId,

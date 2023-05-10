@@ -1,6 +1,5 @@
 import { ConsumeMessage } from 'amqplib';
-import { MessageType } from './types';
-import { HEADER_SEND_TYPE } from './types';
+import { HEADER_SEND_TYPE, MessageType } from '../types';
 
 export const decodeMessage = (consumeMessage: ConsumeMessage | null) => {
   const content = consumeMessage?.content.toString() as string;
