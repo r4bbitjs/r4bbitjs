@@ -1,6 +1,5 @@
 import { ConsumeMessage } from 'amqplib';
-import { MessageType } from './types';
-import { HEADER_SEND_TYPE } from './types';
+import { HEADER_SEND_TYPE, MessageType } from '../types';
 
 export const decodeMessage = (consumeMessage: ConsumeMessage | null) => {
   const content = consumeMessage?.content.toString() as string;
@@ -12,9 +11,7 @@ export const decodeMessage = (consumeMessage: ConsumeMessage | null) => {
     case 'json':
       return JSON.parse(content);
     case 'string':
-      return content;
     case 'object':
-      return content;
     default:
       return content;
   }

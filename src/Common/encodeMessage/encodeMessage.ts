@@ -1,4 +1,4 @@
-import { MessageType } from './types';
+import { MessageType } from '../types';
 
 export const encodeMessage = (message: unknown, messageType?: MessageType) => {
   switch (messageType) {

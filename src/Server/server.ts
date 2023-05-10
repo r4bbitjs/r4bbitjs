@@ -1,7 +1,7 @@
 import { ChannelWrapper, ConnectionUrl } from 'amqp-connection-manager';
 import { ConsumeMessage } from 'amqplib';
-import { encodeMessage } from '../Common/encodeMessage';
-import { prepareHeaders } from '../Common/prepareHeaders';
+import { encodeMessage } from '../Common/encodeMessage/encodeMessage';
+import { prepareHeaders } from '../Common/prepareHeaders/prepareHeaders';
 import { HEADER_RECEIVE_TYPE } from '../Common/types';
 import { initRabbit } from '../Init/init';
 import { InitRabbitOptions } from '../Init/init.type';
@@ -13,8 +13,8 @@ import {
   ServerRPCOptions,
   ServerOptions,
 } from './server.type';
-import { ConnectionSet } from '../Common/cache';
-import { prepareResponse } from '../Common/prepareResponse';
+import { ConnectionSet } from '../Common/cache/cache';
+import { prepareResponse } from '../Common/prepareResponse/prepareResponse';
 
 export class Server {
   private channelWrapper?: ChannelWrapper;
@@ -128,10 +128,11 @@ export class Server {
           {
             ...options?.publishOptions,
             correlationId,
-            headers: prepareHeaders(
-              { isServer: true, signature: options?.replySignature },
-              receiveType
-            ),
+            headers: prepareHeaders({
+              isServer: true,
+              signature: options?.replySignature,
+              receiveType: receiveType,
+            }),
           }
         );
 

@@ -2,11 +2,12 @@ import { initRabbit } from '../Init/init';
 import { InitRabbitOptions } from '../Init/init.type';
 import { ConnectionUrl } from 'amqp-connection-manager';
 import { getClient } from './client';
-import { ConnectionSet } from '../Common/cache';
+import { ConnectionSet } from '../Common/cache/cache';
+
 jest.mock('../Init/init', () => ({
   initRabbit: jest.fn(),
 }));
-jest.mock('../Common/cache', () => ({
+jest.mock('../Common/cache/cache', () => ({
   ConnectionSet: {
     assert: jest.fn(),
   },

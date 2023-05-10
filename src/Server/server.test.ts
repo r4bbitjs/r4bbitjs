@@ -8,7 +8,7 @@ const channelWrapper = {
 };
 const assertMock = jest.fn();
 
-jest.mock('../Common/cache', () => ({
+jest.mock('../Common/cache/cache', () => ({
   ConnectionSet: {
     assert: assertMock,
   },
