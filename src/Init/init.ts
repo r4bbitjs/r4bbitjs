@@ -1,6 +1,8 @@
 import amqp, { ChannelWrapper, ConnectionUrl } from 'amqp-connection-manager';
 import { validateUri } from './connectionUrls.validator';
 import { InitRabbitOptions } from './init.type';
+import { Logger } from '../Common/logger/logger';
+import { listenSignals } from '../Common/signals/signal';
 
 export const initRabbit = async (
   connectionUrls: ConnectionUrl[] | ConnectionUrl,
@@ -16,12 +18,18 @@ export const initRabbit = async (
     );
   }
 
+  if (options?.logger) {
+    Logger.logger = options?.logger;
+  }
+
   try {
     const connection = amqp.connect(connectionUrls, options?.connectOptions);
+    listenSignals(connection);
     const channelWrapper = connection.createChannel(
       options?.createChannelOptions
     );
     await channelWrapper.waitForConnect();
+
     return channelWrapper;
   } catch (error: unknown) {
     throw new Error(`Error while connecting to RabbitMQ: ${error}`);

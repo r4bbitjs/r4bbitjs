@@ -46,6 +46,8 @@
     "eslint-plugin-prettier": "^4.2.1",
     "events": "^3.3.0",
     "nodemon": "^2.0.20",
+    "pino": "^8.14.1",
+    "pino-pretty": "^10.0.0",
     "rxjs": "^7.8.0",
     "uuid": "^9.0.0",
     "zod": "^3.20.6"
