@@ -18,26 +18,29 @@ const listenSystemSignals = (): void => {
 
 const listenConnectionSignals = (connection: IAmqpConnectionManager): void => {
   connection.on('connect', (data) => {
-    logger.debug(`✅ Rabbit Connection Established: ${data.url}`);
+    logger.debug(`✅ Rabbit Connection Established:`, data.url);
   });
 
   connection.on('connectFailed', (err) => {
-    logger.error(`❌ Rabbit Connection Failed: ${err}`);
+    logger.error(`❌ Rabbit Connection Failed:`, err);
   });
 
   connection.on('disconnect', (err) => {
-    logger.error(`❌ Rabbit Connection Disconnected: ${err}`);
+    logger.error(`❌ Rabbit Connection Disconnected:`, err);
   });
 
   connection.on('blocked', (err) => {
-    logger.error(`❌ Rabbit Connection Blocked: ${err}`);
+    logger.error(`❌ Rabbit Connection Blocked:`, err);
   });
 
   connection.on('unblocked', () => {
     logger.error(`✅ Rabbit Connection Unblocked`);
   });
+
+  // TODO: Add also reconnection issue
+  // TODO: add a logic to automatic reconnect
 };
 
 const graceful = () => {
-  // TODO
+  process.exit(-1);
 };

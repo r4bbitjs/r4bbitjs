@@ -1,5 +1,5 @@
 export type ILogger = {
-  info: (message: unknown) => void;
-  error: (message: unknown) => void;
-  debug: (message: unknown) => void;
+  info: (message: string) => void;
+  error: (message: string) => void;
+  debug: (message: string) => void;
 };

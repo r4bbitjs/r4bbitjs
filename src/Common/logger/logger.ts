@@ -1,34 +1,52 @@
 import pino from 'pino';
 import { ILogger } from './logger.type';
+import { isString } from '../typeGuards/isString';
+import { isObject } from '../typeGuards/isObject';
+
+export type LogLevel = 'info' | 'debug' | 'error';
+
+export type ObjectOrString = object | string;
 
 export class Logger {
-  private static _logger: ILogger;
+  constructor(private _loggerEngine?: ILogger) {}
 
-  static set logger(value: ILogger) {
-    this._logger = value;
+  setLogger(value: ILogger) {
+    this._loggerEngine = value;
   }
 
-  static get logger(): ILogger {
-    if (!this._logger) {
-      this.logger = this.createDefaultLogger();
+  private get logger(): ILogger {
+    if (!this._loggerEngine) {
+      this._loggerEngine = this.createDefaultLogger();
     }
 
-    return this._logger;
+    return this._loggerEngine;
   }
 
-  public static info(message: unknown): void {
-    this.logger.info(message);
+  public log(level: LogLevel, message: string, meta?: ObjectOrString): void {
+    let combinedMessage: string = message;
+
+    if (isString(meta)) {
+      combinedMessage = message + ' ' + meta;
+    } else if (isObject(meta)) {
+      combinedMessage = message + ' ' + JSON.stringify(meta);
+    }
+
+    this.logger[level](combinedMessage);
   }
 
-  public static debug(message: unknown): void {
-    this.logger.debug(message);
+  public info(message: string, meta?: ObjectOrString): void {
+    this.log('info', message, meta);
   }
 
-  public static error(message: unknown): void {
-    this.logger.error(message);
+  public debug(message: string, meta?: ObjectOrString): void {
+    this.log('debug', message, meta);
   }
 
-  private static createDefaultLogger(): ILogger {
+  public error(message: string, meta?: ObjectOrString): void {
+    this.log('error', message, meta);
+  }
+
+  private createDefaultLogger(): ILogger {
     return pino({
       transport: {
         target: 'pino-pretty',
@@ -41,4 +59,4 @@ export class Logger {
   }
 }
 
-export const logger = Logger.logger;
+export const logger = new Logger();
