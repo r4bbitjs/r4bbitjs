@@ -22,7 +22,7 @@ export class Logger {
     return this._loggerEngine;
   }
 
-  public log(level: LogLevel, message: string, meta?: ObjectOrString): void {
+  private log(level: LogLevel, message: string, meta?: ObjectOrString): void {
     let combinedMessage: string = message;
 
     if (isString(meta)) {
@@ -43,7 +43,8 @@ export class Logger {
   }
 
   public error(message: string, meta?: ObjectOrString): void {
-    this.log('error', message, meta);
+    const errorPrefix = '❌ r4bbit error: ';
+    this.log('error', errorPrefix + message, meta);
   }
 
   private createDefaultLogger(): ILogger {
@@ -60,3 +61,7 @@ export class Logger {
 }
 
 export const logger = new Logger();
+
+export const setLogger = (clientLogger: ILogger) => {
+  logger.setLogger(clientLogger);
+};

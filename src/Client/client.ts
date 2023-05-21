@@ -15,6 +15,11 @@ import {
 import { prepareHeaders } from '../Common/prepareHeaders/prepareHeaders';
 import { Subscription, Subject, Observer } from 'rxjs';
 import { ConnectionSet } from '../Common/cache/cache';
+import {
+  logMqPublishMessage,
+  logMqPublishError,
+  logMqMessageReceivedError,
+} from '../Common/logger/utils/logMqMessage';
 
 const DEFAULT_TIMEOUT = 30_000;
 
@@ -43,21 +48,26 @@ export class Client {
     options: ClientOptions
   ) {
     const { exchangeName, routingKey } = options;
-
     await ConnectionSet.assert(this.channelWrapper, exchangeName, '', '');
 
-    await this.channelWrapper.publish(
-      exchangeName,
-      routingKey,
-      encodeMessage(message, options?.sendType),
-      {
-        headers: prepareHeaders({
-          isServer: false,
-          sendType: options?.sendType,
-        }),
-        ...options?.publishOptions,
-      }
-    );
+    try {
+      logMqPublishMessage(message);
+      await this.channelWrapper.publish(
+        exchangeName,
+        routingKey,
+        encodeMessage(message, options?.sendType),
+        {
+          headers: prepareHeaders({
+            isServer: false,
+            sendType: options?.sendType,
+          }),
+          ...options?.publishOptions,
+        }
+      );
+    } catch (e: unknown) {
+      logMqPublishError(message);
+      throw e;
+    }
   }
 
   public async publishRPCMessage<ResponseType>(
@@ -81,14 +91,18 @@ export class Client {
       prefixedReplyQueueName
     );
 
-    await this.channelWrapper.consume(
-      prefixedReplyQueueName,
-      clientConsumeFunction,
-      {
-        ...options?.consumeOptions,
-        noAck: true,
-      }
-    );
+    try {
+      await this.channelWrapper.consume(
+        prefixedReplyQueueName,
+        clientConsumeFunction,
+        {
+          ...options?.consumeOptions,
+          noAck: true,
+        }
+      );
+    } catch (err: unknown) {
+      logMqMessageReceivedError(message);
+    }
 
     // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {

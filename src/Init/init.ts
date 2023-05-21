@@ -1,7 +1,6 @@
 import amqp, { ChannelWrapper, ConnectionUrl } from 'amqp-connection-manager';
 import { validateUri } from './connectionUrls.validator';
 import { InitRabbitOptions } from './init.type';
-import { logger } from '../Common/logger/logger';
 import { listenSignals } from '../Common/signals/signal';
 
 export const initRabbit = async (
@@ -16,10 +15,6 @@ export const initRabbit = async (
         ' ' +
         JSON.stringify(err)
     );
-  }
-
-  if (options?.logger) {
-    logger.setLogger(options?.logger);
   }
 
   try {

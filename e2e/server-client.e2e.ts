@@ -4,6 +4,8 @@ import { getClient } from '../src/Client/client';
 import { getServer } from '../src/Server/server';
 import { AckHandler } from '../src/Server/server.type';
 import { testReadyObjects } from './test-objects';
+import winston from 'winston';
+import { setLogger } from '../src/Common/logger/logger';
 
 const handlerFunc: AckHandler =
   ({ ack }) =>
@@ -35,6 +37,23 @@ const objectUrl2: Options.Connect = {
 };
 
 const checkMessagesDispatch = async (url: ConnectionUrl | ConnectionUrl[]) => {
+  const winstonLogger = winston.createLogger({
+    level: 'info',
+    format: winston.format.json(),
+    transports: [
+      new winston.transports.Console({
+        format: winston.format.simple(),
+      }),
+    ],
+  });
+
+  const falseLog = {
+    debug: winstonLogger.info.bind(winstonLogger),
+    info: winstonLogger.info.bind(winstonLogger),
+    error: winstonLogger.error.bind(winstonLogger),
+  };
+
+  setLogger(falseLog);
   const server = await getServer(url);
   const client = await getClient(url);
 

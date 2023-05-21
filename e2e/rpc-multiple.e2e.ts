@@ -17,7 +17,6 @@ const getRandomIntegral = () => Math.floor(Math.random() * 100);
         if (!msg) {
           return;
         }
-        console.log('incomin message', msg);
         await reply(msg);
       }, processingTime);
     };

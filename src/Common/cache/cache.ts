@@ -1,4 +1,5 @@
 import { ChannelWrapper } from 'amqp-connection-manager';
+import { logger } from '../logger/logger';
 
 export class ConnectionSet {
   private static connectionSet = new Set<string>();
@@ -45,11 +46,15 @@ export class ConnectionSet {
       return;
     }
 
-    await channelWrapper.assertExchange(exchange, 'topic');
+    try {
+      await channelWrapper.assertExchange(exchange, 'topic');
 
-    if (queue) {
-      await channelWrapper.assertQueue(queue);
-      await channelWrapper.bindQueue(queue, exchange, routingKey);
+      if (queue) {
+        await channelWrapper.assertQueue(queue);
+        await channelWrapper.bindQueue(queue, exchange, routingKey);
+      }
+    } catch (err: unknown) {
+      logger.error('Assertion error, exchange queue or binding threw an error');
     }
 
     this.setCache(exchange, queue, routingKey);

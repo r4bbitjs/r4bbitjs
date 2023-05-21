@@ -19,7 +19,6 @@ describe('rpc-multiple test', () => {
           if (!msg) {
             return;
           }
-          console.log('incomin message', msg);
           await reply(msg);
         }, processingTime);
       };
@@ -67,7 +66,6 @@ describe('rpc-multiple test', () => {
       },
     });
 
-    console.log('response', response, typeof response);
     const expectedResults = [
       {
         content: { content: { message: 'OurMessage' } },

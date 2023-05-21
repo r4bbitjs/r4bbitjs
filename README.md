@@ -1,7 +1,7 @@
 # Rabbit-Wrapper
 
 # TODO:
-- Make integration tests with the logger libraries like winston
+- Add logging in sending messages in client
 - Add a connection close function so that users can actually close the connection
 - Add loger in order to warn onClose and retry connection after some interval
 - When rabbitmq does not exist warn the client

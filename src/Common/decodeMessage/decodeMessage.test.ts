@@ -42,7 +42,6 @@ describe('decodeMessage', () => {
 
     // when
     const result = decodeMessage(consumeMessage);
-    console.log(result);
     // then
     expect(result).toEqual(JSON.stringify(expectedSerializecObject));
   });
