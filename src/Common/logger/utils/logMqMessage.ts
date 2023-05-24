@@ -3,31 +3,65 @@ import { logger } from '../logger';
 
 type Actor = 'Client' | 'Rpc Client' | 'Server' | 'Rpc Server';
 
-export const logMqPublishMessage = (message: unknown, actor: Actor) => {
+type LogMessageParams = {
+  message: unknown;
+  actor: Actor;
+  topic: string;
+  isDataHidden?: boolean;
+  isCorrelationIdRevealed?: boolean;
+};
+
+const createMsgPrefix = (actor: Actor, topic: string) =>
+  `[${actor}] [${topic}]`;
+
+const hideTheData = (message: unknown, isDataHidden?: boolean) =>
+  !isDataHidden ? convertToLoggableType(message) : '[🕵️ data-is-hidden]';
+
+export const logMqPublishMessage = ({
+  message,
+  actor,
+  topic,
+  isDataHidden,
+}: LogMessageParams) => {
   logger.info(
-    `🐇 [${actor}] is sending the message:`,
-    convertToLoggableType(message)
+    `🐇 ${createMsgPrefix(actor, topic)} is sending the message:`,
+    hideTheData(message, isDataHidden)
   );
 };
 
-export const logMqPublishError = (message: unknown, actor: Actor) => {
+export const logMqPublishError = ({
+  message,
+  actor,
+  topic,
+  isDataHidden,
+}: LogMessageParams) => {
   logger.error(
-    `[${actor}] Error while publishing a message:`,
-    convertToLoggableType(message)
+    `${createMsgPrefix(actor, topic)} Error while publishing a message:`,
+    hideTheData(message, isDataHidden)
   );
 };
 
-export const logMqMessageReceived = (message: unknown, actor: Actor) => {
+export const logMqMessageReceived = ({
+  message,
+  actor,
+  topic,
+  isDataHidden,
+}: LogMessageParams) => {
   logger.info(
-    `🐇 [${actor}] received a message:`,
-    convertToLoggableType(message)
+    `🐇 ${createMsgPrefix(actor, topic)} received a message:`,
+    hideTheData(message, isDataHidden)
   );
 };
 
-export const logMqMessageReceivedError = (message: unknown, actor: Actor) => {
+export const logMqMessageReceivedError = ({
+  message,
+  actor,
+  topic,
+  isDataHidden,
+}: LogMessageParams) => {
   logger.error(
-    `[${actor}] Error while receiving a message:`,
-    convertToLoggableType(message)
+    `${createMsgPrefix(actor, topic)} Error while receiving a message:`,
+    hideTheData(message, isDataHidden)
   );
 };
 
@@ -50,5 +84,5 @@ export const logMultipleRepliesReceived = (allReplies: unknown[]) => {
 };
 
 export const logMqClose = (actor: 'Client' | 'Server') => {
-  logger.error(`${actor} connection closed`);
+  logger.info(`🐇 [${actor}] connection closed`);
 };

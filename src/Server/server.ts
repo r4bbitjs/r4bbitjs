@@ -83,7 +83,12 @@ export class Server {
           options?.responseContains
         );
         // if preparedResponse pass to the handlerFunc
-        logMqMessageReceived(preparedResponse, 'Server');
+        logMqMessageReceived({
+          message: preparedResponse,
+          actor: 'Server',
+          topic: routingKey,
+          isDataHidden: options?.loggerOptions?.isDataHidden,
+        });
         return onMessage(preparedResponse);
       },
       defaultConsumerOptions
@@ -117,7 +122,12 @@ export class Server {
         const receiveType =
           consumedMessage.properties.headers[HEADER_RECEIVE_TYPE];
 
-        logMqPublishMessage(replyMessage, 'Rpc Server');
+        logMqPublishMessage({
+          message: replyMessage,
+          actor: 'Rpc Server',
+          topic: replyTo,
+          isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
+        });
         await this.channelWrapper.publish(
           exchangeName,
           replyTo,
@@ -150,7 +160,12 @@ export class Server {
           ...options?.responseContains,
           signature: false,
         });
-        logMqMessageReceived(preparedResponse, 'Rpc Server');
+        logMqMessageReceived({
+          message: preparedResponse,
+          actor: 'Rpc Server',
+          topic: routingKey,
+          isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
+        });
         return handlerFunction(reply(consumeMessage))(preparedResponse);
       },
       options?.consumeOptions

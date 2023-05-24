@@ -59,3 +59,4 @@ const flatTheObjects = (testObject: TestObject[]): FlatObjects[] => {
 };
 
 export const testReadyObjects = flatTheObjects(testObject);
+console.log(testReadyObjects);

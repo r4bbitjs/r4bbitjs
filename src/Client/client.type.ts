@@ -8,6 +8,9 @@ export type ClientOptions = {
   routingKey: string;
   sendType?: MessageType;
   publishOptions?: Options.Publish;
+  loggerOptions?: {
+    isDataHidden?: boolean;
+  };
 };
 
 export type ClientRPCOptions = {

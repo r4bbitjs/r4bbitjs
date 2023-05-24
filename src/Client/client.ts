@@ -55,7 +55,12 @@ export class Client {
     await ConnectionSet.assert(this.channelWrapper, exchangeName, '', '');
 
     try {
-      logMqPublishMessage(message, 'Client');
+      logMqPublishMessage({
+        message,
+        actor: 'Client',
+        topic: routingKey,
+        isDataHidden: options?.loggerOptions?.isDataHidden,
+      });
       await this.channelWrapper.publish(
         exchangeName,
         routingKey,
@@ -69,7 +74,12 @@ export class Client {
         }
       );
     } catch (e: unknown) {
-      logMqPublishError(message, 'Client');
+      logMqPublishError({
+        message,
+        actor: 'Client',
+        topic: routingKey,
+        isDataHidden: options?.loggerOptions?.isDataHidden,
+      });
       throw e;
     }
   }
@@ -82,7 +92,12 @@ export class Client {
     const prefixedReplyQueueName = `reply.${replyQueueName}`;
 
     const clientConsumeFunction = (msg: ConsumeMessage | null) => {
-      logMqMessageReceived(prepareResponse(msg), 'Rpc Client');
+      logMqMessageReceived({
+        message: prepareResponse(msg),
+        actor: 'Rpc Client',
+        topic: routingKey,
+        isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
+      });
       this.eventEmitter.emit(
         msg?.properties.correlationId,
         prepareResponse(msg, options?.responseContains)
@@ -106,7 +121,12 @@ export class Client {
         }
       );
     } catch (err: unknown) {
-      logMqMessageReceivedError(message, 'Rpc Client');
+      logMqMessageReceivedError({
+        message,
+        actor: 'Rpc Client',
+        topic: routingKey,
+        isDataHidden: options.loggerOptions?.isConsumeDataHidden,
+      });
     }
 
     // eslint-disable-next-line no-async-promise-executor
@@ -126,7 +146,12 @@ export class Client {
         logMqTimeoutError(message, 'Rpc Client', timeoutMessage);
         reject(timeoutMessage);
       }, timeoutValue);
-      logMqPublishMessage(message, 'Rpc Client');
+      logMqPublishMessage({
+        message,
+        actor: 'Rpc Client',
+        topic: routingKey,
+        isDataHidden: options?.loggerOptions?.isSendDataHidden,
+      });
       await this.channelWrapper.publish(
         exchangeName,
         routingKey,
@@ -176,7 +201,12 @@ export class Client {
       const allReplies: unknown[] = [];
 
       const clientConsumeFunction = (msg: ConsumeMessage | null) => {
-        logMqMessageReceived(message, 'Rpc Client');
+        logMqMessageReceived({
+          message: prepareResponse(msg),
+          actor: 'Rpc Client',
+          topic: routingKey,
+          isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
+        });
         this.getCorrlationIdSubject(msg?.properties.correlationId).next(
           prepareResponse(msg, options?.responseContains)
         );
@@ -233,7 +263,12 @@ export class Client {
         }
       );
 
-      logMqPublishMessage(message, 'Rpc Client');
+      logMqPublishMessage({
+        message,
+        actor: 'Rpc Client',
+        topic: routingKey,
+        isDataHidden: options?.loggerOptions?.isSendDataHidden,
+      });
       await this.channelWrapper.publish(
         exchangeName,
         routingKey,

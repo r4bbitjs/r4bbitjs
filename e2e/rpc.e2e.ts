@@ -22,14 +22,14 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
 
   const exchangeName = 'testExchange';
   const objectMessage = { message: 'OurMessage' };
-  const routingKey = 'testRoutingKey';
+  const routingKey = 'testRoutingKey.15';
   const serverQueueName = 'testServerQueue';
   const replyQueueName = 'testReplyQueue';
 
   await server.registerRPCRoute(
     {
       queueName: serverQueueName,
-      routingKey,
+      routingKey: '*.15',
       exchangeName,
     },
     handler,
