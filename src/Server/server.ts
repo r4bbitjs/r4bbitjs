@@ -14,6 +14,11 @@ import {
   ServerOptions,
 } from './server.type';
 import { ConnectionSet } from '../Common/cache/cache';
+import {
+  logMqClose,
+  logMqMessageReceived,
+  logMqPublishMessage,
+} from '../Common/logger/utils/logMqMessage';
 import { prepareResponse } from '../Common/prepareResponse/prepareResponse';
 
 export class Server {
@@ -64,16 +69,6 @@ export class Server {
     await this.channelWrapper.consume(
       queueName,
       (msg) => {
-        // if message null
-        if (msg === null) {
-          throw new Error(
-            'Channel has ben canceled,' +
-              ' ref:' +
-              ' https://amqp-node.github.io/amqplib/channel_api.html' +
-              '#channel_consume'
-          );
-        }
-
         // if in options ack => ack !== undef (with acknowledgment)
         // if in options nack => ack === undef (no acknowledgment)
         const onMessage = !options?.consumeOptions?.noAck
@@ -88,6 +83,7 @@ export class Server {
           options?.responseContains
         );
         // if preparedResponse pass to the handlerFunc
+        logMqMessageReceived(preparedResponse, 'Server');
         return onMessage(preparedResponse);
       },
       defaultConsumerOptions
@@ -121,6 +117,7 @@ export class Server {
         const receiveType =
           consumedMessage.properties.headers[HEADER_RECEIVE_TYPE];
 
+        logMqPublishMessage(replyMessage, 'Rpc Server');
         await this.channelWrapper.publish(
           exchangeName,
           replyTo,
@@ -153,6 +150,7 @@ export class Server {
           ...options?.responseContains,
           signature: false,
         });
+        logMqMessageReceived(preparedResponse, 'Rpc Server');
         return handlerFunction(reply(consumeMessage))(preparedResponse);
       },
       options?.consumeOptions
@@ -160,6 +158,7 @@ export class Server {
   }
 
   async close() {
+    logMqClose('Server');
     const channelWrapper = this.getWrapper();
     await channelWrapper.cancelAll();
     await channelWrapper.close();

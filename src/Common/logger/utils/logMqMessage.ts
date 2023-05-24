@@ -1,27 +1,54 @@
 import { convertToLoggableType } from './convertToLoggableType';
 import { logger } from '../logger';
 
-export const logMqPublishMessage = (message: unknown) => {
+type Actor = 'Client' | 'Rpc Client' | 'Server' | 'Rpc Server';
+
+export const logMqPublishMessage = (message: unknown, actor: Actor) => {
   logger.info(
-    `🐇 r4bbit is sending the message:`,
+    `🐇 [${actor}] is sending the message:`,
     convertToLoggableType(message)
   );
 };
 
-export const logMqPublishError = (message: unknown) => {
+export const logMqPublishError = (message: unknown, actor: Actor) => {
   logger.error(
-    `Error while publishing a message:`,
+    `[${actor}] Error while publishing a message:`,
     convertToLoggableType(message)
   );
 };
 
-export const logMqMessageReceived = (message: unknown) => {
-  logger.info(`🐇 r4bbit received a message:`, convertToLoggableType(message));
+export const logMqMessageReceived = (message: unknown, actor: Actor) => {
+  logger.info(
+    `🐇 [${actor}] received a message:`,
+    convertToLoggableType(message)
+  );
 };
 
-export const logMqMessageReceivedError = (message: unknown) => {
+export const logMqMessageReceivedError = (message: unknown, actor: Actor) => {
   logger.error(
-    `Error while receiving a message:`,
+    `[${actor}] Error while receiving a message:`,
     convertToLoggableType(message)
   );
+};
+
+export const logMqTimeoutError = (
+  message: unknown,
+  actor: Actor,
+  additionalComment?: string
+) => {
+  logger.error(
+    `⌛️💥 [${actor}] Timeout! ${additionalComment ?? ''}`,
+    convertToLoggableType(message)
+  );
+};
+
+export const logMultipleRepliesReceived = (allReplies: unknown[]) => {
+  logger.info(
+    `🐇 [Rpc Client] received multiple replies:`,
+    JSON.stringify(allReplies)
+  );
+};
+
+export const logMqClose = (actor: 'Client' | 'Server') => {
+  logger.error(`${actor} connection closed`);
 };

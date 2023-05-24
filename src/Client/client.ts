@@ -19,6 +19,10 @@ import {
   logMqPublishMessage,
   logMqPublishError,
   logMqMessageReceivedError,
+  logMqMessageReceived,
+  logMqTimeoutError,
+  logMultipleRepliesReceived,
+  logMqClose,
 } from '../Common/logger/utils/logMqMessage';
 
 const DEFAULT_TIMEOUT = 30_000;
@@ -51,7 +55,7 @@ export class Client {
     await ConnectionSet.assert(this.channelWrapper, exchangeName, '', '');
 
     try {
-      logMqPublishMessage(message);
+      logMqPublishMessage(message, 'Client');
       await this.channelWrapper.publish(
         exchangeName,
         routingKey,
@@ -65,7 +69,7 @@ export class Client {
         }
       );
     } catch (e: unknown) {
-      logMqPublishError(message);
+      logMqPublishError(message, 'Client');
       throw e;
     }
   }
@@ -78,6 +82,7 @@ export class Client {
     const prefixedReplyQueueName = `reply.${replyQueueName}`;
 
     const clientConsumeFunction = (msg: ConsumeMessage | null) => {
+      logMqMessageReceived(prepareResponse(msg), 'Rpc Client');
       this.eventEmitter.emit(
         msg?.properties.correlationId,
         prepareResponse(msg, options?.responseContains)
@@ -101,7 +106,7 @@ export class Client {
         }
       );
     } catch (err: unknown) {
-      logMqMessageReceivedError(message);
+      logMqMessageReceivedError(message, 'Rpc Client');
     }
 
     // eslint-disable-next-line no-async-promise-executor
@@ -117,10 +122,11 @@ export class Client {
       const timeoutValue = options?.timeout ?? DEFAULT_TIMEOUT;
       const timeout = setTimeout(() => {
         emitter.removeListener(String(corelationId), listener);
-        reject(
-          `timeout of ${timeoutValue}ms occured for the given rpc message`
-        );
+        const timeoutMessage = `Timeout of ${timeoutValue}ms occured for the given rpc message`;
+        logMqTimeoutError(message, 'Rpc Client', timeoutMessage);
+        reject(timeoutMessage);
       }, timeoutValue);
+      logMqPublishMessage(message, 'Rpc Client');
       await this.channelWrapper.publish(
         exchangeName,
         routingKey,
@@ -170,6 +176,7 @@ export class Client {
       const allReplies: unknown[] = [];
 
       const clientConsumeFunction = (msg: ConsumeMessage | null) => {
+        logMqMessageReceived(message, 'Rpc Client');
         this.getCorrlationIdSubject(msg?.properties.correlationId).next(
           prepareResponse(msg, options?.responseContains)
         );
@@ -183,16 +190,19 @@ export class Client {
           allReplies.push(data);
 
           if (allReplies.length === options?.waitedReplies) {
+            logMultipleRepliesReceived(allReplies);
             resolve(allReplies);
           }
 
           options.handler && options.handler(data);
         },
+        // currently no errorous case
         error: (error: Error) => {
           reject(error);
           this.removeSubject(corelationId, subscription);
         },
         complete: () => {
+          logMultipleRepliesReceived(allReplies);
           resolve(allReplies);
           this.removeSubject(corelationId, subscription);
         },
@@ -223,6 +233,7 @@ export class Client {
         }
       );
 
+      logMqPublishMessage(message, 'Rpc Client');
       await this.channelWrapper.publish(
         exchangeName,
         routingKey,
@@ -242,6 +253,7 @@ export class Client {
   }
 
   public async close() {
+    logMqClose('Client');
     await this.channelWrapper.cancelAll();
     await this.channelWrapper.close();
   }

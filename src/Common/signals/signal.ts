@@ -10,7 +10,7 @@ const listenSystemSignals = (): void => {
   const signals = ['SIGHUP', 'SIGINT', 'SIGTERM'] as const;
   signals.forEach((signal) => {
     process.on(signal, () => {
-      logger.debug(`👋 Gracefully Closing ${signal}`);
+      logger.debug(`🐇👋 Gracefully Closing ${signal}`);
       graceful();
     });
   });
@@ -18,23 +18,23 @@ const listenSystemSignals = (): void => {
 
 const listenConnectionSignals = (connection: IAmqpConnectionManager): void => {
   connection.on('connect', (data) => {
-    logger.debug(`✅ Rabbit Connection Established:`, data.url);
+    logger.debug(`✅ R4bbit Connection Established:`, data.url);
   });
 
   connection.on('connectFailed', (err) => {
-    logger.error(`❌ Rabbit Connection Failed:`, err);
+    logger.error(`❌ R4bbit Connection Failed:`, err);
   });
 
   connection.on('disconnect', (err) => {
-    logger.error(`❌ Rabbit Connection Disconnected:`, err);
+    logger.error(`❌ R4bbit Connection Disconnected:`, err);
   });
 
   connection.on('blocked', (err) => {
-    logger.error(`❌ Rabbit Connection Blocked:`, err);
+    logger.error(`❌ R4bbit Connection Blocked:`, err);
   });
 
   connection.on('unblocked', () => {
-    logger.error(`✅ Rabbit Connection Unblocked`);
+    logger.error(`✅ R4bbit Connection Unblocked`);
   });
 
   // TODO: Add also reconnection issue

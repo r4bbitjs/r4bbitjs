@@ -2,6 +2,10 @@ import amqp, { ChannelWrapper, ConnectionUrl } from 'amqp-connection-manager';
 import { validateUri } from './connectionUrls.validator';
 import { InitRabbitOptions } from './init.type';
 import { listenSignals } from '../Common/signals/signal';
+import { logger } from '../Common/logger/logger';
+import { triggerConsoleWarnWrapper } from '../Common/consoleWarnWrapper/consoleWarnWrapper';
+
+triggerConsoleWarnWrapper();
 
 export const initRabbit = async (
   connectionUrls: ConnectionUrl[] | ConnectionUrl,
@@ -10,11 +14,13 @@ export const initRabbit = async (
   try {
     await validateUri(connectionUrls);
   } catch (err: unknown) {
-    throw new Error(
+    const errorMsg =
       'Entered uri is not in valid amqp uri format, please check https://www.rabbitmq.com/uri-spec.html' +
-        ' ' +
-        JSON.stringify(err)
-    );
+      ' ' +
+      JSON.stringify(err);
+
+    logger.error(errorMsg);
+    throw new Error(errorMsg);
   }
 
   try {
@@ -27,6 +33,8 @@ export const initRabbit = async (
 
     return channelWrapper;
   } catch (error: unknown) {
-    throw new Error(`Error while connecting to RabbitMQ: ${error}`);
+    const errorMsg = `Error while connecting to RabbitMQ: ${error}`;
+    logger.error(errorMsg);
+    throw new Error(errorMsg);
   }
 };
