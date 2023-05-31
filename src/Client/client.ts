@@ -1,7 +1,7 @@
 import { ChannelWrapper, ConnectionUrl } from 'amqp-connection-manager';
 import { ConsumeMessage } from 'amqplib';
 import { EventEmitter } from 'events';
-import { v4 as uuidv4 } from 'uuid';
+import { nanoid } from 'nanoid/async';
 import { encodeMessage } from '../Common/encodeMessage/encodeMessage';
 import { prepareResponse } from '../Common/prepareResponse/prepareResponse';
 import { initRabbit } from '../Init/init';
@@ -131,7 +131,7 @@ export class Client {
 
     // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
-      const corelationId = uuidv4();
+      const corelationId = await nanoid();
 
       const listener = (msg: ConsumeMessage) => {
         clearTimeout(timeout);
@@ -193,7 +193,7 @@ export class Client {
     const { exchangeName, replyQueueName, routingKey } = options;
     const prefixedReplyQueueName = `reply.${replyQueueName}`;
 
-    const corelationId = uuidv4();
+    const corelationId = await nanoid();
     this.messageMap.set(corelationId, new Subject());
 
     // eslint-disable-next-line no-async-promise-executor

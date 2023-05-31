@@ -46,6 +46,7 @@
     "amqp-connection-manager": "^4.1.10",
     "eslint-plugin-prettier": "^4.2.1",
     "events": "^3.3.0",
+    "nanoid": "^4.0.2",
     "nodemon": "^2.0.20",
     "pino": "^8.14.1",
     "pino-pretty": "^10.0.0",

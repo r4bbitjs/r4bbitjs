@@ -1,6 +1,7 @@
 # Rabbit-Wrapper
 
 # TODO:
+- Add RequestTracer to a Server
 - Add a global set up when starting the application that reveals request ids etc.
 - Add to the logs the topic exchange name.topic (log.child)
 - Add global config (support for env vars and silent mode)
@@ -30,7 +31,16 @@
 
   Get from the client set and get request Id functions then use them in Rpc calls
 
-  r4bbitRequest({setReqId, getReqId})
+  const {client, server} = r4bbitSetup({
+    logger: falseLog,
+    requestTracer: {
+      setReqId: setReqId,
+      getReqId: getReqId,
+    }
+  })
+
+  client.sendRpc
+
 
   clientRpcRequest
 
@@ -39,6 +49,8 @@
     else
         X-Request-Id: cuid()
 
+
+    [X-Request-Id]: getReqId() ?? await getReqId() : cuid();
 
 
   serverRpcRequest
