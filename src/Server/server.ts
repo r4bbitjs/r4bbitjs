@@ -20,6 +20,7 @@ import {
   logMqPublishMessage,
 } from '../Common/logger/utils/logMqMessage';
 import { prepareResponse } from '../Common/prepareResponse/prepareResponse';
+import { extractAndSetReqId } from '../Common/RequestTracer/extractAndSetReqId';
 
 export class Server {
   private channelWrapper?: ChannelWrapper;
@@ -68,7 +69,7 @@ export class Server {
 
     await this.channelWrapper.consume(
       queueName,
-      (msg) => {
+      (msg: ConsumeMessage) => {
         // if in options ack => ack !== undef (with acknowledgment)
         // if in options nack => ack === undef (no acknowledgment)
         const onMessage = !options?.consumeOptions?.noAck
@@ -82,6 +83,9 @@ export class Server {
           msg,
           options?.responseContains
         );
+
+        extractAndSetReqId(msg.properties.headers);
+
         // if preparedResponse pass to the handlerFunc
         logMqMessageReceived({
           message: preparedResponse,
@@ -160,6 +164,7 @@ export class Server {
           ...options?.responseContains,
           signature: false,
         });
+        extractAndSetReqId(consumeMessage.properties.headers);
         logMqMessageReceived({
           message: preparedResponse,
           actor: 'Rpc Server',

@@ -13,7 +13,7 @@ export class RequestTracer {
     // empty for singleton
   }
 
-  public static getInstance() {
+  public static getInstance(): RequestTracer {
     if (!this._requestTracer) {
       this._requestTracer = new RequestTracer();
     }
@@ -39,7 +39,7 @@ export class RequestTracer {
 }
 
 type SetupR4bbitOptions = {
-  logger: ILogger;
+  logger?: ILogger;
   requestTracer?: {
     setReqId?: SetReqId;
     getReqId?: GetReqId;
@@ -48,7 +48,9 @@ type SetupR4bbitOptions = {
 
 export class SetupR4bbit {
   constructor({ logger, requestTracer }: SetupR4bbitOptions) {
-    setLogger(logger);
+    if (logger) {
+      setLogger(logger);
+    }
 
     if (requestTracer?.setReqId) {
       RequestTracer.getInstance().setRequestId = requestTracer.setReqId;

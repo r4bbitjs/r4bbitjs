@@ -2,6 +2,7 @@ import pino from 'pino';
 import { ILogger } from './logger.type';
 import { isString } from '../typeGuards/isString';
 import { isObject } from '../typeGuards/isObject';
+import { RequestTracer } from '../RequestTracer/requestTracer';
 
 export type LogLevel = 'info' | 'debug' | 'error';
 
@@ -30,6 +31,10 @@ export class Logger {
     } else if (isObject(meta)) {
       combinedMessage = message + ' ' + JSON.stringify(meta);
     }
+
+    const instance = RequestTracer.getInstance();
+    instance.getRequestId &&
+      (combinedMessage += ` reqId: ${instance.getRequestId()}`);
 
     this.logger[level](combinedMessage);
   }

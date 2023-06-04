@@ -24,6 +24,9 @@ import {
   logMultipleRepliesReceived,
   logMqClose,
 } from '../Common/logger/utils/logMqMessage';
+import { extractAndSetReqId } from '../Common/RequestTracer/extractAndSetReqId';
+import { extractReqId } from '../Common/RequestTracer/extractReqId';
+import { combineAndSetReqIds } from '../Common/RequestTracer/combineAndSetReqIds';
 
 const DEFAULT_TIMEOUT = 30_000;
 
@@ -91,7 +94,8 @@ export class Client {
     const { exchangeName, replyQueueName, routingKey } = options;
     const prefixedReplyQueueName = `reply.${replyQueueName}`;
 
-    const clientConsumeFunction = (msg: ConsumeMessage | null) => {
+    const clientConsumeFunction = (msg: ConsumeMessage) => {
+      extractAndSetReqId(msg.properties.headers);
       logMqMessageReceived({
         message: prepareResponse(msg),
         actor: 'Rpc Client',
@@ -198,18 +202,19 @@ export class Client {
 
     // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
-      const allReplies: unknown[] = [];
+      const allReplies: ClientObservable[] = [];
 
-      const clientConsumeFunction = (msg: ConsumeMessage | null) => {
+      const clientConsumeFunction = (msg: ConsumeMessage) => {
         logMqMessageReceived({
           message: prepareResponse(msg),
           actor: 'Rpc Client',
           topic: routingKey,
           isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
         });
-        this.getCorrlationIdSubject(msg?.properties.correlationId).next(
-          prepareResponse(msg, options?.responseContains)
-        );
+        this.getCorrlationIdSubject(msg?.properties.correlationId).next({
+          preparedResponse: prepareResponse(msg, options?.responseContains),
+          reqId: extractReqId(msg?.properties?.headers),
+        });
       };
 
       // eslint-disable-next-line prefer-const
@@ -218,13 +223,11 @@ export class Client {
       const observer: Observer<ClientObservable> = {
         next: (data) => {
           allReplies.push(data);
+          options.handler && options.handler(data);
 
           if (allReplies.length === options?.waitedReplies) {
-            logMultipleRepliesReceived(allReplies);
-            resolve(allReplies);
+            this.getCorrlationIdSubject(corelationId).complete();
           }
-
-          options.handler && options.handler(data);
         },
         // currently no errorous case
         error: (error: Error) => {
@@ -232,13 +235,19 @@ export class Client {
           this.removeSubject(corelationId, subscription);
         },
         complete: () => {
-          logMultipleRepliesReceived(allReplies);
-          resolve(allReplies);
+          combineAndSetReqIds(allReplies);
+          const preparedResponses = allReplies.map(
+            (reply: ClientObservable) => reply.preparedResponse
+          );
+          clearTimeout(timeout);
+
+          logMultipleRepliesReceived(preparedResponses);
+          resolve(preparedResponses);
           this.removeSubject(corelationId, subscription);
         },
       };
 
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         this.getCorrlationIdSubject(corelationId).complete();
       }, options?.timeout || DEFAULT_TIMEOUT);
 

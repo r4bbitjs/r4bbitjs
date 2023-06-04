@@ -1,7 +1,6 @@
 # Rabbit-Wrapper
 
 # TODO:
-- Add RequestTracer to a Server
 - Add a global set up when starting the application that reveals request ids etc.
 - Add to the logs the topic exchange name.topic (log.child)
 - Add global config (support for env vars and silent mode)
