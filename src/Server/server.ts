@@ -20,7 +20,7 @@ import {
   logMqPublishMessage,
 } from '../Common/logger/utils/logMqMessage';
 import { prepareResponse } from '../Common/prepareResponse/prepareResponse';
-import { extractAndSetReqId } from '../Common/RequestTracer/extractAndSetReqId';
+import { extractAndSetReqId } from '../Common/requestTracer/extractAndSetReqId';
 
 export class Server {
   private channelWrapper?: ChannelWrapper;
@@ -160,10 +160,13 @@ export class Server {
     await this.channelWrapper.consume(
       queueName,
       (consumeMessage) => {
+        console.log('GOT MESSAGE', consumeMessage);
         const preparedResponse = prepareResponse(consumeMessage, {
           ...options?.responseContains,
           signature: false,
         });
+        console.log('preparedResponse', preparedResponse);
+
         extractAndSetReqId(consumeMessage.properties.headers);
         logMqMessageReceived({
           message: preparedResponse,

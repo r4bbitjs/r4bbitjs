@@ -1,8 +1,5 @@
-import { setLogger } from '../logger/logger';
-import { ILogger } from '../logger/logger.type';
-
-type GetReqId = () => string;
-type SetReqId = (message: string) => void;
+export type GetReqId = () => string;
+export type SetReqId = (message: string) => void;
 
 export class RequestTracer {
   private static _requestTracer?: RequestTracer;
@@ -35,29 +32,5 @@ export class RequestTracer {
 
   get getRequestId(): GetReqId | undefined {
     return this._getRequestId;
-  }
-}
-
-type SetupR4bbitOptions = {
-  logger?: ILogger;
-  requestTracer?: {
-    setReqId?: SetReqId;
-    getReqId?: GetReqId;
-  };
-};
-
-export class SetupR4bbit {
-  constructor({ logger, requestTracer }: SetupR4bbitOptions) {
-    if (logger) {
-      setLogger(logger);
-    }
-
-    if (requestTracer?.setReqId) {
-      RequestTracer.getInstance().setRequestId = requestTracer.setReqId;
-    }
-
-    if (requestTracer?.getReqId) {
-      RequestTracer.getInstance().getRequestId = requestTracer.getReqId;
-    }
   }
 }

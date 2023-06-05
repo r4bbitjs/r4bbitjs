@@ -36,6 +36,14 @@ export class Logger {
     instance.getRequestId &&
       (combinedMessage += ` reqId: ${instance.getRequestId()}`);
 
+    if (!instance.getRequestId) {
+      console.log('NO GET_REQUEST_ID');
+    } else {
+      console.log('getRequestId: ', instance?.getRequestId());
+    }
+
+    console.log('combinedMessage: ', combinedMessage);
+
     this.logger[level](combinedMessage);
   }
 

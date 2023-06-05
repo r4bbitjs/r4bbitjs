@@ -1,3 +1,4 @@
+import { RequestTracer } from '../RequestTracer/requestTracer';
 import {
   HEADER_SEND_TYPE,
   HEADER_RECEIVE_TYPE,
@@ -5,7 +6,6 @@ import {
   HEADER_REPLY_SIGNATURE,
   HEADER_REQUEST_ID,
 } from '../types';
-import { RequestTracer } from '../RequestTracer/requestTracer';
 import { nanoid } from 'nanoid';
 
 export type HeadersParams = {

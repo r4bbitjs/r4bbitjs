@@ -24,9 +24,9 @@ import {
   logMultipleRepliesReceived,
   logMqClose,
 } from '../Common/logger/utils/logMqMessage';
-import { extractAndSetReqId } from '../Common/RequestTracer/extractAndSetReqId';
-import { extractReqId } from '../Common/RequestTracer/extractReqId';
-import { combineAndSetReqIds } from '../Common/RequestTracer/combineAndSetReqIds';
+import { extractAndSetReqId } from '../Common/requestTracer/extractAndSetReqId';
+import { extractReqId } from '../Common/requestTracer/extractReqId';
+import { combineAndSetReqIds } from '../Common/requestTracer/combineAndSetReqIds';
 
 const DEFAULT_TIMEOUT = 30_000;
 

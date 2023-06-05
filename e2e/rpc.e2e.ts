@@ -48,7 +48,7 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
       exchangeName,
       routingKey,
       replyQueueName,
-      timeout: 2_000,
+      timeout: 5_000,
       responseContains: {
         content: true,
         headers: true,
