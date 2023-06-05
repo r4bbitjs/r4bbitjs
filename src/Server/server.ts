@@ -160,12 +160,10 @@ export class Server {
     await this.channelWrapper.consume(
       queueName,
       (consumeMessage) => {
-        console.log('GOT MESSAGE', consumeMessage);
         const preparedResponse = prepareResponse(consumeMessage, {
           ...options?.responseContains,
           signature: false,
         });
-        console.log('preparedResponse', preparedResponse);
 
         extractAndSetReqId(consumeMessage.properties.headers);
         logMqMessageReceived({

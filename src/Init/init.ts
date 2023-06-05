@@ -19,6 +19,8 @@ export const initRabbit = async (
       ' ' +
       JSON.stringify(err);
 
+    logger.info('asdffasdfads', {['url-1', 'url-2']});
+
     logger.error(errorMsg);
     throw new Error(errorMsg);
   }

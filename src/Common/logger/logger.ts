@@ -8,11 +8,31 @@ export type LogLevel = 'info' | 'debug' | 'error';
 
 export type ObjectOrString = object | string;
 
+type LogObject = {
+  data: unknown;
+  level: string;
+  requestId?: string;
+  actor?: string;
+  action?: 'receive' | 'publish';
+  topic: string;
+};
+
+export type LoggerOptions = {
+  isPretty: boolean;
+};
+
 export class Logger {
+  private options = {
+    isPretty: true,
+  };
+
   constructor(private _loggerEngine?: ILogger) {}
 
-  setLogger(value: ILogger) {
+  setLogger(value: ILogger, options?: LoggerOptions) {
     this._loggerEngine = value;
+    if (options) {
+      this.options = options;
+    }
   }
 
   private get logger(): ILogger {
@@ -29,22 +49,20 @@ export class Logger {
     if (isString(meta)) {
       combinedMessage = message + ' ' + meta;
     } else if (isObject(meta)) {
-      combinedMessage = message + ' ' + JSON.stringify(meta);
+      combinedMessage = message + ' ' + JSON.stringify(meta, null, 2);
     }
+
+    const logObject: LogObject = {
+      message,
+      level,
+    };
 
     const instance = RequestTracer.getInstance();
-    instance.getRequestId &&
-      (combinedMessage += ` reqId: ${instance.getRequestId()}`);
-
-    if (!instance.getRequestId) {
-      console.log('NO GET_REQUEST_ID');
-    } else {
-      console.log('getRequestId: ', instance?.getRequestId());
+    if (instance.getRequestId) {
+      logObject.requestId = instance.getRequestId();
     }
 
-    console.log('combinedMessage: ', combinedMessage);
-
-    this.logger[level](combinedMessage);
+    this.logger[level](JSON.stringify(logObject, null, 2));
   }
 
   public info(message: string, meta?: ObjectOrString): void {
@@ -58,6 +76,29 @@ export class Logger {
   public error(message: string, meta?: ObjectOrString): void {
     const errorPrefix = '❌ r4bbit error: ';
     this.log('error', errorPrefix + message, meta);
+  }
+
+  
+  /**
+   * logObject: {
+   *  actor: 'Client' , 'Server', 'Rpc Client', 'Rpc Server' 
+   *  action: 'receive' | 'publish
+   *  data: Object 
+   *  requestId: string
+   *  topic: string
+   * }
+   */
+  public communicationLog(logObject: ) {
+    const instance = RequestTracer.getInstance();
+    if (instance.getRequestId) {
+      logObject.requestId = instance.getRequestId();
+    }
+    const message = JSON.stringify(
+      logObject,
+      null,
+      this.options.isPretty ? 2 : 0
+    );
+    this.logger['info'](message);
   }
 
   private createDefaultLogger(): ILogger {
@@ -75,6 +116,9 @@ export class Logger {
 
 export const logger = new Logger();
 
-export const setLogger = (clientLogger: ILogger) => {
-  logger.setLogger(clientLogger);
+export const setLogger = (
+  clientLogger: ILogger,
+  loggerOptions?: LoggerOptions
+) => {
+  logger.setLogger(clientLogger, loggerOptions);
 };

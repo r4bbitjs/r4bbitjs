@@ -1,7 +1,8 @@
 # Rabbit-Wrapper
 
 # TODO:
-- Add possibility to client and server functions tto cencor data
+- Change the existing logging functions with new communicationLog unction
+  * logMqMessageReceived will be replaced by it
 - Add a connection close function so that users can actually close the connection
 - Add loger in order to warn onClose and retry connection after some interval
 - When rabbitmq does not exist warn the client

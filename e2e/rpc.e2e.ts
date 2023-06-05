@@ -1,10 +1,18 @@
 import { getClient } from '../src/Client/client';
 import { getServer } from '../src/Server/server';
 import { Reply, RpcHandler } from '../src/Server/server.type';
+import { setupR4bbit } from '../src';
+import { getReqId, setReqId } from './mock-req-functions';
 
 const localUrl = 'amqp://guest:guest@localhost:5672/';
 
 (async () => {
+  setupR4bbit({
+    requestTracer: {
+      getReqId,
+      setReqId,
+    },
+  });
   const server = await getServer(localUrl);
   const client = await getClient(localUrl);
 

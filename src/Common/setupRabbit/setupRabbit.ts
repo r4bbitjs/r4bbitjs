@@ -1,9 +1,12 @@
 import { setLogger } from '../logger/logger';
 import { ILogger } from '../logger/logger.type';
-import { RequestTracer, SetReqId } from '../RequestTracer/requestTracer';
-import { GetReqId } from '../RequestTracer/requestTracer';
+import {
+  SetReqId,
+  GetReqId,
+  RequestTracer,
+} from '../RequestTracer/requestTracer';
 
-type SetupR4bbitOptions = {
+export type SetupR4bbitOptions = {
   logger?: ILogger;
   requestTracer?: {
     setReqId?: SetReqId;
@@ -11,18 +14,16 @@ type SetupR4bbitOptions = {
   };
 };
 
-export class SetupR4bbit {
-  constructor({ logger, requestTracer }: SetupR4bbitOptions) {
-    if (logger) {
-      setLogger(logger);
-    }
-
-    if (requestTracer?.setReqId) {
-      RequestTracer.getInstance().setRequestId = requestTracer.setReqId;
-    }
-
-    if (requestTracer?.getReqId) {
-      RequestTracer.getInstance().getRequestId = requestTracer.getReqId;
-    }
+export const setupR4bbit = ({ logger, requestTracer }: SetupR4bbitOptions) => {
+  if (logger) {
+    setLogger(logger);
   }
-}
+
+  if (requestTracer?.setReqId) {
+    RequestTracer.getInstance().setRequestId = requestTracer.setReqId;
+  }
+
+  if (requestTracer?.getReqId) {
+    RequestTracer.getInstance().getRequestId = requestTracer.getReqId;
+  }
+};
