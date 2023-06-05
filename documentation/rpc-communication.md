@@ -2,8 +2,8 @@
 
 ```mermaid
 sequenceDiagram
-    backend-onboarding->>backend-epayment: [client][backend.epayment] Some message info
-    backend-epayment->>backend-epayment: [server][backend.epayment] Message received
-    backend-epayment->>backend-onboarding: [server][backend.epayment] Send reply
-    backend-onboarding->>backend-onboarding: [client][backend.epayment] Msg received
+    service-1->>service-2: [client][backend.epayment] Some message info
+    service-2->>service-2: [server][backend.epayment] Message received
+    service-2->>service-1: [server][backend.epayment] Send reply
+    service-1->>service-1: [client][backend.epayment] Msg received
 ```
