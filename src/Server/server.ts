@@ -14,13 +14,10 @@ import {
   ServerOptions,
 } from './server.type';
 import { ConnectionSet } from '../Common/cache/cache';
-import {
-  logMqClose,
-  logMqMessageReceived,
-  logMqPublishMessage,
-} from '../Common/logger/utils/logMqMessage';
+import { logMqClose } from '../Common/logger/utils/logMqMessage';
 import { prepareResponse } from '../Common/prepareResponse/prepareResponse';
 import { extractAndSetReqId } from '../Common/requestTracer/extractAndSetReqId';
+import { logger } from '../Common/logger/logger';
 
 export class Server {
   private channelWrapper?: ChannelWrapper;
@@ -87,11 +84,12 @@ export class Server {
         extractAndSetReqId(msg.properties.headers);
 
         // if preparedResponse pass to the handlerFunc
-        logMqMessageReceived({
-          message: preparedResponse,
+        logger.communicationLog({
+          data: preparedResponse,
           actor: 'Server',
           topic: routingKey,
           isDataHidden: options?.loggerOptions?.isDataHidden,
+          action: 'receive',
         });
         return onMessage(preparedResponse);
       },
@@ -126,11 +124,12 @@ export class Server {
         const receiveType =
           consumedMessage.properties.headers[HEADER_RECEIVE_TYPE];
 
-        logMqPublishMessage({
-          message: replyMessage,
+        logger.communicationLog({
+          data: replyMessage,
           actor: 'Rpc Server',
           topic: replyTo,
           isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
+          action: 'publish',
         });
         await this.channelWrapper.publish(
           exchangeName,
@@ -166,11 +165,12 @@ export class Server {
         });
 
         extractAndSetReqId(consumeMessage.properties.headers);
-        logMqMessageReceived({
-          message: preparedResponse,
+        logger.communicationLog({
+          data: preparedResponse,
           actor: 'Rpc Server',
           topic: routingKey,
           isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
+          action: 'receive',
         });
         return handlerFunction(reply(consumeMessage))(preparedResponse);
       },

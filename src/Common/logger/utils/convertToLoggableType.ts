@@ -1,4 +1,4 @@
-import { ObjectOrString } from '../logger';
+import { ObjectOrString } from '../logger.type';
 import { isString } from '../../typeGuards/isString';
 import { isObject } from '../../typeGuards/isObject';
 

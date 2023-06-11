@@ -4,7 +4,7 @@
 - Change the existing logging functions with new communicationLog unction
   * logMqMessageReceived will be replaced by it
 - Add a connection close function so that users can actually close the connection
-- Add loger in order to warn onClose and retry connection after some interval
+- Add logger in order to warn onClose and retry connection after some interval
 - When rabbitmq does not exist warn the client
 - Gracefully close the connection
 - sonar-cloud
@@ -23,6 +23,7 @@
    * allow user to anonimize logs' contents
    * allow message wise and global wise anonymization
    * option to enable / disable requestId in logs
+   * Allow maps and sets in logging using superjson
 
 - Multiple Replies:
 1. [v2] Make the response spread if only content is specified

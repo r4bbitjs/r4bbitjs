@@ -16,17 +16,13 @@ import { prepareHeaders } from '../Common/prepareHeaders/prepareHeaders';
 import { Subscription, Subject, Observer } from 'rxjs';
 import { ConnectionSet } from '../Common/cache/cache';
 import {
-  logMqPublishMessage,
-  logMqPublishError,
-  logMqMessageReceivedError,
-  logMqMessageReceived,
-  logMqTimeoutError,
-  logMultipleRepliesReceived,
   logMqClose,
+  logMultipleRepliesReceived,
 } from '../Common/logger/utils/logMqMessage';
 import { extractAndSetReqId } from '../Common/requestTracer/extractAndSetReqId';
 import { extractReqId } from '../Common/requestTracer/extractReqId';
 import { combineAndSetReqIds } from '../Common/requestTracer/combineAndSetReqIds';
+import { logger } from '../Common/logger/logger';
 
 const DEFAULT_TIMEOUT = 30_000;
 
@@ -58,11 +54,12 @@ export class Client {
     await ConnectionSet.assert(this.channelWrapper, exchangeName, '', '');
 
     try {
-      logMqPublishMessage({
-        message,
+      logger.communicationLog({
+        data: message,
         actor: 'Client',
         topic: routingKey,
         isDataHidden: options?.loggerOptions?.isDataHidden,
+        action: 'publish',
       });
       await this.channelWrapper.publish(
         exchangeName,
@@ -77,11 +74,13 @@ export class Client {
         }
       );
     } catch (e: unknown) {
-      logMqPublishError({
-        message,
+      logger.communicationLog({
+        level: 'error',
+        data: message,
         actor: 'Client',
         topic: routingKey,
         isDataHidden: options?.loggerOptions?.isDataHidden,
+        action: 'publish',
       });
       throw e;
     }
@@ -96,9 +95,10 @@ export class Client {
 
     const clientConsumeFunction = (msg: ConsumeMessage) => {
       extractAndSetReqId(msg.properties.headers);
-      logMqMessageReceived({
-        message: prepareResponse(msg),
+      logger.communicationLog({
+        data: prepareResponse(msg),
         actor: 'Rpc Client',
+        action: 'receive',
         topic: routingKey,
         isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
       });
@@ -125,8 +125,10 @@ export class Client {
         }
       );
     } catch (err: unknown) {
-      logMqMessageReceivedError({
-        message,
+      logger.communicationLog({
+        level: 'error',
+        action: 'receive',
+        data: message,
         actor: 'Rpc Client',
         topic: routingKey,
         isDataHidden: options.loggerOptions?.isConsumeDataHidden,
@@ -147,14 +149,23 @@ export class Client {
       const timeout = setTimeout(() => {
         emitter.removeListener(String(corelationId), listener);
         const timeoutMessage = `Timeout of ${timeoutValue}ms occured for the given rpc message`;
-        logMqTimeoutError(message, 'Rpc Client', timeoutMessage);
+        logger.communicationLog({
+          data: message,
+          actor: 'Rpc Client',
+          topic: routingKey,
+          isDataHidden: !!options?.loggerOptions?.isSendDataHidden,
+          action: 'publish',
+        });
+
         reject(timeoutMessage);
       }, timeoutValue);
-      logMqPublishMessage({
-        message,
+
+      logger.communicationLog({
+        data: message,
         actor: 'Rpc Client',
         topic: routingKey,
-        isDataHidden: options?.loggerOptions?.isSendDataHidden,
+        isDataHidden: !!options?.loggerOptions?.isSendDataHidden,
+        action: 'publish',
       });
       await this.channelWrapper.publish(
         exchangeName,
@@ -205,12 +216,14 @@ export class Client {
       const allReplies: ClientObservable[] = [];
 
       const clientConsumeFunction = (msg: ConsumeMessage) => {
-        logMqMessageReceived({
-          message: prepareResponse(msg),
+        logger.communicationLog({
+          data: prepareResponse(msg),
           actor: 'Rpc Client',
           topic: routingKey,
           isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
+          action: 'receive',
         });
+
         this.getCorrlationIdSubject(msg?.properties.correlationId).next({
           preparedResponse: prepareResponse(msg, options?.responseContains),
           reqId: extractReqId(msg?.properties?.headers),
@@ -242,6 +255,7 @@ export class Client {
           clearTimeout(timeout);
 
           logMultipleRepliesReceived(preparedResponses);
+
           resolve(preparedResponses);
           this.removeSubject(corelationId, subscription);
         },
@@ -272,11 +286,12 @@ export class Client {
         }
       );
 
-      logMqPublishMessage({
-        message,
+      logger.communicationLog({
+        data: message,
         actor: 'Rpc Client',
         topic: routingKey,
         isDataHidden: options?.loggerOptions?.isSendDataHidden,
+        action: 'publish',
       });
       await this.channelWrapper.publish(
         exchangeName,
