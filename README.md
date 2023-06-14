@@ -1,8 +1,7 @@
 # Rabbit-Wrapper
 
 # TODO:
-- Change the existing logging functions with new communicationLog unction
-  * logMqMessageReceived will be replaced by it
+- Fix the algorithm for your own json stringify method. (definitely make it a library)
 - Add a connection close function so that users can actually close the connection
 - Add logger in order to warn onClose and retry connection after some interval
 - When rabbitmq does not exist warn the client

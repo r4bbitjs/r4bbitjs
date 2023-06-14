@@ -28,6 +28,14 @@ export type GenericLog = {
 
 export type Actor = 'Client' | 'Server' | 'Rpc Client' | 'Rpc Server';
 
+export type CommunicationLogKeys =
+  | 'actor'
+  | 'action'
+  | 'data'
+  | 'requestId'
+  | 'topic'
+  | 'level';
+
 export type CommunicationLog = {
   actor: Actor;
   action: 'receive' | 'publish';
@@ -36,4 +44,9 @@ export type CommunicationLog = {
   topic: string;
   isDataHidden?: boolean;
   level?: LogLevel;
+  error?: {
+    description: string;
+    message: string;
+    stack: string;
+  };
 };

@@ -73,16 +73,21 @@ export class Client {
           ...options?.publishOptions,
         }
       );
-    } catch (e: unknown) {
+    } catch (err: unknown) {
       logger.communicationLog({
         level: 'error',
+        error: {
+          description: '💥 An error occurred while publishing message',
+          message: (err as Error).message,
+          stack: (err as Error).stack || '',
+        },
         data: message,
         actor: 'Client',
         topic: routingKey,
         isDataHidden: options?.loggerOptions?.isDataHidden,
         action: 'publish',
       });
-      throw e;
+      throw err;
     }
   }
 
@@ -127,12 +132,18 @@ export class Client {
     } catch (err: unknown) {
       logger.communicationLog({
         level: 'error',
+        error: {
+          description: '💥 An error occurred while receiving message',
+          message: (err as Error).message,
+          stack: (err as Error).stack || '',
+        },
         action: 'receive',
         data: message,
         actor: 'Rpc Client',
         topic: routingKey,
         isDataHidden: options.loggerOptions?.isConsumeDataHidden,
       });
+      throw err;
     }
 
     // eslint-disable-next-line no-async-promise-executor

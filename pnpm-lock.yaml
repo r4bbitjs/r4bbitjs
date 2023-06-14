@@ -10,6 +10,7 @@ specifiers:
   '@typescript-eslint/parser': ^5.51.0
   amqp-connection-manager: ^4.1.10
   amqplib: ^0.10.3
+  colors: ^1.4.0
   eslint: ^8.33.0
   eslint-config-prettier: ^8.6.0
   eslint-plugin-prettier: ^4.2.1
@@ -32,6 +33,7 @@ specifiers:
 
 dependencies:
   amqp-connection-manager: 4.1.10_amqplib@0.10.3
+  colors: 1.4.0
   eslint-plugin-prettier: 4.2.1_qa2thblfovmfepmgrc7z2owbo4
   events: 3.3.0
   nanoid: 3.3.6
@@ -1919,6 +1921,11 @@ packages:
 
   /colorette/2.0.20:
     resolution: {integrity: sha512-IfEDxwoWIjkeXL1eXcDiow4UbKjhLdq6/EuSVR9GMN7KVH3r9gQ83e73hsz1Nd1T3ijd5xv1wcWRYO+D6kCI2w==}
+    dev: false
+
+  /colors/1.4.0:
+    resolution: {integrity: sha512-a+UqTh4kgZg/SlGvfbzDHpgRu7AAQOmmqRHJnxhRZICKFUT91brVhNNt58CMWU9PsBbv3PDCZUHbVxuDiH2mtA==}
+    engines: {node: '>=0.1.90'}
     dev: false
 
   /colorspace/1.1.4:

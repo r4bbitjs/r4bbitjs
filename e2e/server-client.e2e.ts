@@ -14,7 +14,7 @@ const handlerFunc: AckHandler =
     if (!ack) return;
 
     try {
-      console.log('test', msg);
+      // console.log('test', msg);
       ack();
     } catch (error) {
       console.log('error', error);
@@ -81,7 +81,7 @@ const checkMessagesDispatch = async (url: ConnectionUrl | ConnectionUrl[]) => {
       sendType: 'string',
     });
     counter++;
-    console.log('sending message: ' + counter);
+    // console.log('sending message: ' + counter);
   }, 1000);
 };
 

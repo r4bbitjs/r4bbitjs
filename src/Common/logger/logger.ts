@@ -1,6 +1,7 @@
 import pino from 'pino';
 import {
   CommunicationLog,
+  CommunicationLogKeys,
   GenericLog,
   ILogger,
   LogLevel,
@@ -9,6 +10,9 @@ import {
 } from './logger.type';
 import { RequestTracer } from '../RequestTracer/requestTracer';
 import { convertToLoggableType } from './utils/convertToLoggableType';
+// eslint-disable-next-line unused-imports/no-unused-imports-ts
+import colors from 'colors';
+colors.enable();
 
 const hideTheData = (message: unknown, isDataHidden?: boolean) =>
   !isDataHidden ? convertToLoggableType(message) : '[🕵️ data-is-hidden]';
@@ -70,15 +74,42 @@ export class Logger {
     if (instance.getRequestId) {
       logObject.requestId = instance.getRequestId();
     }
-    const message = JSON.stringify(
-      logObject,
-      null,
-      this.options.isPretty ? 2 : 0
-    );
-
     logObject.data = hideTheData(logObject.data, logObject.isDataHidden);
 
-    this.logger[logObject.level ?? 'info'](message);
+    const coloredLog = this.prepareLog(logObject);
+    this.logger[logObject.level ?? 'info'](coloredLog);
+  }
+
+  colorTable = {
+    actor: 'red',
+    action: 'blue',
+    topic: 'magenta',
+    requestId: 'yellow',
+    data: 'cyan',
+    level: 'white',
+    error: 'red',
+  } as const;
+
+  private prepareLog(communicationLog: CommunicationLog): string {
+    delete communicationLog.isDataHidden;
+
+    return Object.entries(communicationLog)
+      .map(([key, value]) => {
+        const keyColored = key.gray;
+        const propertyColor = this.colorTable[key as CommunicationLogKeys];
+
+        if (key === 'data') {
+          const coloredData = JSON.stringify(value, null, 2)[propertyColor];
+          return `${keyColored}: ${coloredData}`;
+        }
+
+        if (key === 'error') {
+          const coloredData = JSON.stringify(value, null, 2)[propertyColor];
+          return `${keyColored}: ${coloredData}`;
+        }
+        return `${keyColored}: ${String(value)[propertyColor]}`;
+      })
+      .join('\n');
   }
 
   private createDefaultLogger(): ILogger {

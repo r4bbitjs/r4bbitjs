@@ -57,44 +57,62 @@ export class Server {
     };
 
     const defaultConsumerOptions = options?.consumeOptions ?? { noAck: false };
-    await ConnectionSet.assert(
-      this.channelWrapper,
-      exchangeName,
-      queueName,
-      routingKey
-    );
 
-    await this.channelWrapper.consume(
-      queueName,
-      (msg: ConsumeMessage) => {
-        // if in options ack => ack !== undef (with acknowledgment)
-        // if in options nack => ack === undef (no acknowledgment)
-        const onMessage = !options?.consumeOptions?.noAck
-          ? (handlerFunction as AckHandler)({
-              ack: simpleAck(msg),
-              nack: simpleNack(msg),
-            })
-          : (handlerFunction as Handler);
-        // if in options responseContains => prepareResponse
-        const preparedResponse = prepareResponse(
-          msg,
-          options?.responseContains
-        );
+    try {
+      await ConnectionSet.assert(
+        this.channelWrapper,
+        exchangeName,
+        queueName,
+        routingKey
+      );
 
-        extractAndSetReqId(msg.properties.headers);
+      await this.channelWrapper.consume(
+        queueName,
+        (msg: ConsumeMessage) => {
+          // if in options ack => ack !== undef (with acknowledgment)
+          // if in options nack => ack === undef (no acknowledgment)
+          const onMessage = !options?.consumeOptions?.noAck
+            ? (handlerFunction as AckHandler)({
+                ack: simpleAck(msg),
+                nack: simpleNack(msg),
+              })
+            : (handlerFunction as Handler);
+          // if in options responseContains => prepareResponse
+          const preparedResponse = prepareResponse(
+            msg,
+            options?.responseContains
+          );
 
-        // if preparedResponse pass to the handlerFunc
-        logger.communicationLog({
-          data: preparedResponse,
-          actor: 'Server',
-          topic: routingKey,
-          isDataHidden: options?.loggerOptions?.isDataHidden,
-          action: 'receive',
-        });
-        return onMessage(preparedResponse);
-      },
-      defaultConsumerOptions
-    );
+          extractAndSetReqId(msg.properties.headers);
+
+          // if preparedResponse pass to the handlerFunc
+          logger.communicationLog({
+            data: preparedResponse,
+            actor: 'Server',
+            topic: routingKey,
+            isDataHidden: options?.loggerOptions?.isDataHidden,
+            action: 'receive',
+          });
+          return onMessage(preparedResponse);
+        },
+        defaultConsumerOptions
+      );
+    } catch (err) {
+      logger.communicationLog({
+        level: 'error',
+        error: {
+          description: '💥 An error occurred while receiving message',
+          message: (err as Error).message,
+          stack: (err as Error).stack || '',
+        },
+        action: 'receive',
+        data: {},
+        actor: 'Server',
+        topic: routingKey,
+        isDataHidden: false,
+      });
+      throw err;
+    }
   }
 
   async registerRPCRoute(
@@ -131,22 +149,38 @@ export class Server {
           isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
           action: 'publish',
         });
-        await this.channelWrapper.publish(
-          exchangeName,
-          replyTo,
-          encodeMessage(replyMessage, receiveType),
-          {
-            ...options?.publishOptions,
-            correlationId,
-            headers: prepareHeaders({
-              isServer: true,
-              signature: options?.replySignature,
-              receiveType: receiveType,
-            }),
-          }
-        );
+        try {
+          await this.channelWrapper.publish(
+            exchangeName,
+            replyTo,
+            encodeMessage(replyMessage, receiveType),
+            {
+              ...options?.publishOptions,
+              correlationId,
+              headers: prepareHeaders({
+                isServer: true,
+                signature: options?.replySignature,
+                receiveType: receiveType,
+              }),
+            }
+          );
 
-        this.channelWrapper.ack.call(this.channelWrapper, consumedMessage);
+          this.channelWrapper.ack.call(this.channelWrapper, consumedMessage);
+        } catch (err) {
+          logger.communicationLog({
+            level: 'error',
+            error: {
+              description: '💥 An error occurred while sending message',
+              message: (err as Error).message,
+              stack: (err as Error).stack || '',
+            },
+            action: 'publish',
+            data: replyMessage,
+            actor: 'Rpc Server',
+            topic: routingKey,
+            isDataHidden: options?.loggerOptions?.isSendDataHidden,
+          });
+        }
       };
 
     await ConnectionSet.assert(
@@ -156,26 +190,42 @@ export class Server {
       routingKey
     );
 
-    await this.channelWrapper.consume(
-      queueName,
-      (consumeMessage) => {
-        const preparedResponse = prepareResponse(consumeMessage, {
-          ...options?.responseContains,
-          signature: false,
-        });
+    try {
+      await this.channelWrapper.consume(
+        queueName,
+        (consumeMessage) => {
+          const preparedResponse = prepareResponse(consumeMessage, {
+            ...options?.responseContains,
+            signature: false,
+          });
 
-        extractAndSetReqId(consumeMessage.properties.headers);
-        logger.communicationLog({
-          data: preparedResponse,
-          actor: 'Rpc Server',
-          topic: routingKey,
-          isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
-          action: 'receive',
-        });
-        return handlerFunction(reply(consumeMessage))(preparedResponse);
-      },
-      options?.consumeOptions
-    );
+          extractAndSetReqId(consumeMessage.properties.headers);
+          logger.communicationLog({
+            data: preparedResponse,
+            actor: 'Rpc Server',
+            topic: routingKey,
+            isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
+            action: 'receive',
+          });
+          return handlerFunction(reply(consumeMessage))(preparedResponse);
+        },
+        options?.consumeOptions
+      );
+    } catch (err) {
+      logger.communicationLog({
+        level: 'error',
+        error: {
+          description: '💥 An error occurred while receiving message',
+          message: (err as Error).message,
+          stack: (err as Error).stack || '',
+        },
+        action: 'receive',
+        data: {},
+        actor: 'Rpc Server',
+        topic: routingKey,
+        isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
+      });
+    }
   }
 
   async close() {
