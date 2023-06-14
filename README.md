@@ -29,40 +29,12 @@
 2. [v2] Allow from user a whitelist of possible servers also instead of waitedReplies
 
 
+Roadmap:
 
-# RequestTracerSolution:
+  1- Finish logging
+  2- Create an alpha package with ci/cd pipeline
+  3 - examples and documentation
 
-  Get from the client set and get request Id functions then use them in Rpc calls
-
-  const {client, server} = r4bbitSetup({
-    logger: falseLog,
-    requestTracer: {
-      setReqId: setReqId,
-      getReqId: getReqId,
-    }
-  })
-
-  client.sendRpc
-
-
-  clientRpcRequest
-
-    if getReqId
-        X-Request-Id: getReqId()
-    else
-        X-Request-Id: cuid()
-
-
-    [X-Request-Id]: getReqId() ?? await getReqId() : cuid();
-
-
-  serverRpcRequest
-
-    if X-Request-Id
-        setReqId(X-Request-Id)
-    else
-        setReqId(cuid())
-
-
-
+Sprint Goals:
+  Until end of sunday finish logging
 
