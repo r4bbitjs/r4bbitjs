@@ -1,31 +1,49 @@
 import colors from 'colors';
+import { isObject } from '../../../typeGuards/isObject';
+import { isString } from '../../../typeGuards/isString';
 colors.enable();
 
-export const colorizedStringify = (obj: unknown) => {
-  if (typeof obj === 'number') {
-    console.log('ITS A NUMBER', obj);
-    return String(obj).white;
-  }
+const SEPARATOR = ' ';
 
-  if (typeof obj === 'string') {
+const levelWhiteSpace = (level: number): string => SEPARATOR.repeat(level);
+
+export const colorizedStringify = (obj: unknown, level: number = 0): string => {
+  if (typeof obj === 'number') {
+    return String(obj).bgBlue;
+  }
+  
+  if (isString(obj)) {
     return obj.red;
   }
 
+  if (typeof obj === 'boolean') {
+    return String(obj).green;
+  }
+  
   if (obj === null) {
-    return 'null'.white;
+    return  'null'.bgRed;
+  }
+  
+  
+  if (isObject(obj)) {
+    return colorizeObject(obj, level);
   }
 
-  if (typeof obj === 'object') {
-    return colorizeObject(obj);
+  if (Array.isArray(obj)) {
+    const content = obj
+      .map((item: unknown) => colorizedStringify(item, 0))
+      .join(', ')
+
+    return `[${content}]`
   }
 
-  // TODO: array
+  return '';
 };
 
-const colorizeObject = (obj: object): string => {
+const colorizeObject = (obj: object, level: number = 0): string => {
   return Object.entries(obj)
-    .map(([key, value]) => `\n${key}: ${colorizedStringify(value)}`)
-    .join('\n');
+  .map(([key, value]) => `\n${levelWhiteSpace(level)}${(key + ':').bgRed} ${colorizedStringify(value, level + 1)}`)
+  .join('');
 };
 
 const example = {
@@ -33,9 +51,12 @@ const example = {
     y: {
       z: 1,
     },
-    y2: {
+    y2: { 
       z: 2,
     },
+    y3: {
+      arr: [1, 2, 'text', true, null]
+    }
   },
 };
 
