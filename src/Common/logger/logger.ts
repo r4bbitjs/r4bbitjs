@@ -8,10 +8,11 @@ import {
   LoggerOptions,
   ObjectOrString,
 } from './logger.type';
-import { RequestTracer } from '../RequestTracer/requestTracer';
+import { RequestTracer } from '../requestTracer/requestTracer';
 import { convertToLoggableType } from './utils/convertToLoggableType';
-// eslint-disable-next-line unused-imports/no-unused-imports-ts
+import { colorizedStringify } from './utils/colorizedStringify/colorizedStringify';
 import colors from 'colors';
+import { Colors } from './colors.type';
 colors.enable();
 
 const hideTheData = (message: unknown, isDataHidden?: boolean) =>
@@ -93,23 +94,29 @@ export class Logger {
   private prepareLog(communicationLog: CommunicationLog): string {
     delete communicationLog.isDataHidden;
 
-    return Object.entries(communicationLog)
-      .map(([key, value]) => {
-        const keyColored = key.gray;
-        const propertyColor = this.colorTable[key as CommunicationLogKeys];
+    return (
+      Object.entries(communicationLog)
+        .map(([key, value]) => {
+          const keyColored = key.gray;
+          const propertyColor = this.colorTable[key as CommunicationLogKeys];
+          const colorMap: Record<string, Colors> = {
+            signature: 'red',
+            headers: 'blue',
+            content: 'bgCyan',
+          };
 
-        if (key === 'data') {
-          const coloredData = JSON.stringify(value, null, 2)[propertyColor];
-          return `${keyColored}: ${coloredData}`;
-        }
+          if (key === 'data') {
+            return colorizedStringify({ data: value }, colorMap);
+          }
 
-        if (key === 'error') {
-          const coloredData = JSON.stringify(value, null, 2)[propertyColor];
-          return `${keyColored}: ${coloredData}`;
-        }
-        return `${keyColored}: ${String(value)[propertyColor]}`;
-      })
-      .join('\n');
+          if (key === 'error') {
+            return colorizedStringify({ error: value }, colorMap);
+          }
+
+          return `${keyColored}: ${String(value)[propertyColor]}`;
+        })
+        .join('\n') + '\n'
+    );
   }
 
   private createDefaultLogger(): ILogger {

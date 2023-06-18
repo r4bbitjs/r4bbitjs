@@ -1,16 +1,15 @@
 import colors from 'colors';
 import { isObject } from '../../../typeGuards/isObject';
 import { isString } from '../../../typeGuards/isString';
-import { Colors } from '../../colors.type';
 colors.enable();
 
 const SEPARATOR = ' ';
 
 const levelWhiteSpace = (level: number): string => SEPARATOR.repeat(level);
 
-export const colorizedStringify = (
-  obj: unknown,
-  colorMap: Record<string, Colors>,
+export const colorizedStringify3 = <T>(
+  obj: T,
+  colorMap: Record<keyof T, string>,
   level = 0
 ): string => {
   if (typeof obj === 'number') {
@@ -35,7 +34,7 @@ export const colorizedStringify = (
 
   if (Array.isArray(obj)) {
     const content = obj
-      .map((item: unknown) => colorizedStringify(item, colorMap, 0))
+      .map((item: unknown) => colorizedStringify3(item, colorMap, 0))
       .join(', ');
 
     return `[${content}]`;
@@ -44,27 +43,16 @@ export const colorizedStringify = (
   return '';
 };
 
-const colorizeObject = (
-  obj: object,
-  colorMap: Record<string, Colors>,
+const colorizeObject = <T extends Record<string, unknown>>(
+  obj: T,
+  colorMap: Record<keyof T, string>,
   level = 0
 ): string => {
   return Object.entries(obj)
     .map(([key, value]) => {
-      let current = 'white';
-
-      if (colorMap['root']) {
-        current = colorMap['root'];
-      }
-
-      if (colorMap[key]) {
-        current = colorMap[key];
-        colorMap.root = colorMap[key];
-      }
-
       return `\n${levelWhiteSpace(level)}${
-        (key + ':')[current as unknown as number]
-      } ${colorizedStringify(value, colorMap, level + 1)}`;
+        (key + ':')[colorMap[key as keyof T] as unknown as number]
+      } ${colorizedStringify3(value, colorMap, level + 1)}`;
     })
     .join('');
 };

@@ -4,7 +4,7 @@ import {
   SetReqId,
   GetReqId,
   RequestTracer,
-} from '../RequestTracer/requestTracer';
+} from '../requestTracer/requestTracer';
 
 export type SetupR4bbitOptions = {
   logger?: ILogger;

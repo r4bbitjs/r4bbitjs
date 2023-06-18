@@ -29,7 +29,7 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
     };
 
   const exchangeName = 'testExchange';
-  const objectMessage = { message: 'OurMessage' };
+  const objectMessage = { message: 'OurMessage', nested: { value: 15 } };
   const routingKey = 'testRoutingKey.15';
   const serverQueueName = 'testServerQueue';
   const replyQueueName = 'testReplyQueue';

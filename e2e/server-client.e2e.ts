@@ -14,7 +14,6 @@ const handlerFunc: AckHandler =
     if (!ack) return;
 
     try {
-      // console.log('test', msg);
       ack();
     } catch (error) {
       console.log('error', error);
@@ -48,7 +47,7 @@ const checkMessagesDispatch = async (url: ConnectionUrl | ConnectionUrl[]) => {
   });
 
   const falseLog = {
-    debug: winstonLogger.info.bind(winstonLogger),
+    debug: winstonLogger.debug.bind(winstonLogger),
     info: winstonLogger.info.bind(winstonLogger),
     error: winstonLogger.error.bind(winstonLogger),
   };
@@ -72,16 +71,22 @@ const checkMessagesDispatch = async (url: ConnectionUrl | ConnectionUrl[]) => {
     );
   }
 
-  let counter = 0;
   setInterval(async () => {
-    const message = 123;
+    const message = {
+      test: 'test',
+      test2: 123,
+      test3: {
+        test4: 'test4',
+        test5: true,
+      },
+      test6: [1, 2, 3],
+      test7: null,
+    };
     await client.publishMessage(message, {
       exchangeName: 'exchange1',
       routingKey: 'something.test2',
-      sendType: 'string',
+      sendType: 'json',
     });
-    counter++;
-    // console.log('sending message: ' + counter);
   }, 1000);
 };
 
