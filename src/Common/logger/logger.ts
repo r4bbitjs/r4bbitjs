@@ -81,15 +81,15 @@ export class Logger {
     this.logger[logObject.level ?? 'info'](coloredLog);
   }
 
-  colorTable = {
-    actor: 'red',
+  colorTable: Record<string, Colors> = {
+    actor: 'america',
     action: 'blue',
     topic: 'magenta',
     requestId: 'yellow',
     data: 'cyan',
     level: 'white',
     error: 'red',
-  } as const;
+  };
 
   private prepareLog(communicationLog: CommunicationLog): string {
     delete communicationLog.isDataHidden;
@@ -113,7 +113,9 @@ export class Logger {
             return colorizedStringify({ error: value }, colorMap);
           }
 
-          return `${keyColored}: ${String(value)[propertyColor]}`;
+          return `${keyColored}: ${
+            String(value)[propertyColor as unknown as number]
+          }`;
         })
         .join('\n') + '\n'
     );

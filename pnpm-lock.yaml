@@ -1,9 +1,16 @@
-lockfileVersion: '6.0'
+lockfileVersion: '6.1'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
 
 dependencies:
   amqp-connection-manager:
     specifier: ^4.1.13
     version: 4.1.13(amqplib@0.10.3)
+  chalk:
+    specifier: ^4.1.2
+    version: 4.1.2
   colors:
     specifier: ^1.4.0
     version: 1.4.0
@@ -77,7 +84,7 @@ devDependencies:
     version: 2.8.8
   ts-jest:
     specifier: ^29.1.0
-    version: 29.1.0(jest@29.5.0)(typescript@5.1.3)
+    version: 29.1.0(@babel/core@7.22.5)(esbuild@0.18.4)(jest@29.5.0)(typescript@5.1.3)
   ts-node:
     specifier: ^10.9.1
     version: 10.9.1(@types/node@20.3.1)(typescript@5.1.3)
@@ -4793,7 +4800,7 @@ packages:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
     dev: true
 
-  /ts-jest@29.1.0(jest@29.5.0)(typescript@5.1.3):
+  /ts-jest@29.1.0(@babel/core@7.22.5)(esbuild@0.18.4)(jest@29.5.0)(typescript@5.1.3):
     resolution: {integrity: sha512-ZhNr7Z4PcYa+JjMl62ir+zPiNJfXJN6E8hSLnaUKhOgqcn8vb3e537cpkd0FuAfRK3sR1LSqM1MOhliXNgOFPA==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     hasBin: true
@@ -4814,7 +4821,9 @@ packages:
       esbuild:
         optional: true
     dependencies:
+      '@babel/core': 7.22.5
       bs-logger: 0.2.6
+      esbuild: 0.18.4
       fast-json-stable-stringify: 2.1.0
       jest: 29.5.0(@types/node@20.3.1)(ts-node@10.9.1)
       jest-util: 29.5.0
@@ -5254,7 +5263,3 @@ packages:
   /zod@3.21.4:
     resolution: {integrity: sha512-m46AKbrzKVzOzs/DZgVnG5H55N1sv1M8qZU3A8RIKbs3mrACDNeIOeilDymVb2HdmP8uwshOCF4uJ8uM9rCqJw==}
     dev: false
-
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false

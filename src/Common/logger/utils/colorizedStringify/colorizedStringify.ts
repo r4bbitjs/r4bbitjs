@@ -10,7 +10,7 @@ const levelWhiteSpace = (level: number): string => SEPARATOR.repeat(level);
 
 export const colorizedStringify = (
   obj: unknown,
-  colorMap: Record<string, Colors>,
+  colorMap: Record<string, Colors> = {},
   level = 0
 ): string => {
   if (typeof obj === 'number') {
