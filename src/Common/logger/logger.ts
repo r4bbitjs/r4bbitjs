@@ -11,9 +11,11 @@ import {
 import { RequestTracer } from '../requestTracer/requestTracer';
 import { convertToLoggableType } from './utils/convertToLoggableType';
 import { colorizedStringify } from './utils/colorizedStringify/colorizedStringify';
-import colors from 'colors';
-import { Colors } from './colors.type';
-colors.enable();
+import chalk from 'chalk';
+import {
+  colorMap,
+  monokaiColorTheme,
+} from './utils/colorizedStringify/colorMap';
 
 const hideTheData = (message: unknown, isDataHidden?: boolean) =>
   !isDataHidden ? convertToLoggableType(message) : '[🕵️ data-is-hidden]';
@@ -81,45 +83,48 @@ export class Logger {
     this.logger[logObject.level ?? 'info'](coloredLog);
   }
 
-  colorTable: Record<string, Colors> = {
-    actor: 'america',
-    action: 'blue',
-    topic: 'magenta',
-    requestId: 'yellow',
-    data: 'cyan',
-    level: 'white',
-    error: 'red',
+  colorTable: Record<string, chalk.Chalk> = {
+    actor: chalk.hex(monokaiColorTheme.Green),
+    action: chalk.hex(monokaiColorTheme.Green),
+    topic: chalk.hex(monokaiColorTheme.Green),
+    requestId: chalk.hex(monokaiColorTheme.Green),
+    data: chalk.hex(monokaiColorTheme.Green),
+    level: chalk.hex(monokaiColorTheme.Green),
+    error: chalk.hex(monokaiColorTheme.Green),
   };
 
-  private prepareLog(communicationLog: CommunicationLog): string {
+  prepareLog = (communicationLog: CommunicationLog): string => {
     delete communicationLog.isDataHidden;
+
+    const { colorizeKey } = colorMap;
 
     return (
       Object.entries(communicationLog)
         .map(([key, value]) => {
-          const keyColored = key.gray;
-          const propertyColor = this.colorTable[key as CommunicationLogKeys];
-          const colorMap: Record<string, Colors> = {
-            signature: 'red',
-            headers: 'blue',
-            content: 'bgCyan',
+          const colorizeMethod = this.colorTable[key as CommunicationLogKeys];
+          const colorMap: Record<string, string> = {
+            signature: monokaiColorTheme.Green,
+            headers: monokaiColorTheme.Yellow,
+            content: monokaiColorTheme.Orange,
           };
 
           if (key === 'data') {
-            return colorizedStringify({ data: value }, colorMap);
+            return `${colorizeKey(key)}: ${colorizedStringify(
+              value,
+              colorMap,
+              1
+            )}`;
           }
 
           if (key === 'error') {
-            return colorizedStringify({ error: value }, colorMap);
+            return `${colorizeKey(key)}: ${colorizedStringify(value, {}, 1)}`;
           }
 
-          return `${keyColored}: ${
-            String(value)[propertyColor as unknown as number]
-          }`;
+          return `${colorizeKey(key)}: ${colorizeMethod(value)}`;
         })
         .join('\n') + '\n'
     );
-  }
+  };
 
   private createDefaultLogger(): ILogger {
     return pino({

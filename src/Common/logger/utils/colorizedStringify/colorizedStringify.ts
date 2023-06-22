@@ -1,8 +1,15 @@
-import colors from 'colors';
 import { isObject } from '../../../typeGuards/isObject';
 import { isString } from '../../../typeGuards/isString';
-import { Colors } from '../../colors.type';
-colors.enable();
+import chalk from 'chalk';
+import { monokaiColorTheme, colorMap } from './colorMap';
+
+const {
+  colorizeBoolean,
+  colorizeNull,
+  colorizeNumber,
+  colorizeString,
+  colorizeArray,
+} = colorMap;
 
 const SEPARATOR = ' ';
 
@@ -10,23 +17,23 @@ const levelWhiteSpace = (level: number): string => SEPARATOR.repeat(level);
 
 export const colorizedStringify = (
   obj: unknown,
-  colorMap: Record<string, Colors> = {},
+  colorMap: Record<string, string> = {},
   level = 0
 ): string => {
   if (typeof obj === 'number') {
-    return String(obj).bgBlue;
+    return colorizeNumber(String(obj));
   }
 
   if (isString(obj)) {
-    return obj.red;
+    return colorizeString(obj);
   }
 
   if (typeof obj === 'boolean') {
-    return String(obj).green;
+    return colorizeBoolean(String(obj));
   }
 
   if (obj === null) {
-    return 'null'.bgRed;
+    return colorizeNull('null');
   }
 
   if (isObject(obj)) {
@@ -36,9 +43,9 @@ export const colorizedStringify = (
   if (Array.isArray(obj)) {
     const content = obj
       .map((item: unknown) => colorizedStringify(item, colorMap, 0))
-      .join(', ');
+      .join(colorizeArray(', '));
 
-    return `[${content}]`;
+    return `${colorizeArray('[')}${content}${colorizeArray(']')}`;
   }
 
   return '';
@@ -46,24 +53,21 @@ export const colorizedStringify = (
 
 const colorizeObject = (
   obj: object,
-  colorMap: Record<string, Colors>,
+  colorMap: Record<string, string>,
   level = 0
 ): string => {
   return Object.entries(obj)
     .map(([key, value]) => {
-      let current = 'white';
-
-      if (colorMap['root']) {
-        current = colorMap['root'];
-      }
-
       if (colorMap[key]) {
-        current = colorMap[key];
         colorMap.root = colorMap[key];
       }
 
+      const coloredKey = colorMap['root']
+        ? chalk.hex(colorMap['root']).italic(key)
+        : chalk.hex(monokaiColorTheme.Green).italic(key);
+
       return `\n${levelWhiteSpace(level)}${
-        (key + ':')[current as unknown as number]
+        coloredKey + ':'
       } ${colorizedStringify(value, colorMap, level + 1)}`;
     })
     .join('');

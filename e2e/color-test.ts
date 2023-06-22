@@ -1,47 +1,52 @@
-import { Colors } from '../src/Common/logger/colors.type';
+import chalk from 'chalk';
 import {
   CommunicationLog,
   CommunicationLogKeys,
 } from '../src/Common/logger/logger.type';
 import { colorizedStringify } from '../src/Common/logger/utils/colorizedStringify/colorizedStringify';
-import chalk from 'chalk';
+import {
+  colorMap,
+  monokaiColorTheme,
+} from '../src/Common/logger/utils/colorizedStringify/colorMap';
 
-const colorTable: Record<string, Colors> = {
-  actor: 'bold',
-  action: 'blue',
-  topic: 'magenta',
-  requestId: 'yellow',
-  data: 'cyan',
-  level: 'white',
-  error: 'red',
+const colorTable: Record<string, chalk.Chalk> = {
+  actor: chalk.hex(monokaiColorTheme.Green),
+  action: chalk.hex(monokaiColorTheme.Green),
+  topic: chalk.hex(monokaiColorTheme.Green),
+  requestId: chalk.hex(monokaiColorTheme.Green),
+  data: chalk.hex(monokaiColorTheme.Green),
+  level: chalk.hex(monokaiColorTheme.Green),
+  error: chalk.hex(monokaiColorTheme.Green),
 };
 
 const prepareLog = (communicationLog: CommunicationLog): string => {
   delete communicationLog.isDataHidden;
 
+  const { colorizeKey } = colorMap;
+
   return (
     Object.entries(communicationLog)
       .map(([key, value]) => {
-        const warning = chalk.hex('#FFD866');
-        const keyColored = warning(key);
-        const propertyColor = colorTable[key as CommunicationLogKeys];
-        const colorMap: Record<string, Colors> = {
-          signature: 'red',
-          headers: 'blue',
-          content: 'bgCyan',
+        const colorizeMethod = colorTable[key as CommunicationLogKeys];
+        const colorMap: Record<string, string> = {
+          signature: monokaiColorTheme.Green,
+          headers: monokaiColorTheme.Yellow,
+          content: monokaiColorTheme.Orange,
         };
 
         if (key === 'data') {
-          return `${keyColored}: ${colorizedStringify(value, colorMap)}`;
+          return `${colorizeKey(key)}: ${colorizedStringify(
+            value,
+            colorMap,
+            1
+          )}`;
         }
 
         if (key === 'error') {
-          return colorizedStringify({ error: value }, colorMap);
+          return `${colorizeKey(key)}: ${colorizedStringify(value, {}, 1)}`;
         }
 
-        return `${keyColored}: ${
-          String(value)[propertyColor as unknown as number]
-        }`;
+        return `${colorizeKey(key)}: ${colorizeMethod(value)}`;
       })
       .join('\n') + '\n'
   );
