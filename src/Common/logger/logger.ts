@@ -16,6 +16,7 @@ import {
   colorMap,
   monokaiColorTheme,
 } from './utils/colorizedStringify/colorMap';
+import { fetchReqId } from '../prepareHeaders/prepareHeaders';
 
 const hideTheData = (message: unknown, isDataHidden?: boolean) =>
   !isDataHidden ? convertToLoggableType(message) : '[🕵️ data-is-hidden]';
@@ -73,10 +74,7 @@ export class Logger {
   }
 
   public communicationLog(logObject: CommunicationLog) {
-    const instance = RequestTracer.getInstance();
-    if (instance.getRequestId) {
-      logObject.requestId = instance.getRequestId();
-    }
+    logObject.requestId = logObject.requestId ?? fetchReqId();
     logObject.data = hideTheData(logObject.data, logObject.isDataHidden);
 
     const coloredLog = this.prepareLog(logObject);
@@ -98,32 +96,30 @@ export class Logger {
 
     const { colorizeKey } = colorMap;
 
-    return (
-      Object.entries(communicationLog)
-        .map(([key, value]) => {
-          const colorizeMethod = this.colorTable[key as CommunicationLogKeys];
-          const colorMap: Record<string, string> = {
-            signature: monokaiColorTheme.Green,
-            headers: monokaiColorTheme.Yellow,
-            content: monokaiColorTheme.Orange,
-          };
+    return `\n${Object.entries(communicationLog)
+      .map(([key, value]) => {
+        const colorizeMethod = this.colorTable[key as CommunicationLogKeys];
+        const colorMap: Record<string, string> = {
+          signature: monokaiColorTheme.Green,
+          headers: monokaiColorTheme.Yellow,
+          content: monokaiColorTheme.Orange,
+        };
 
-          if (key === 'data') {
-            return `${colorizeKey(key)}: ${colorizedStringify(
-              value,
-              colorMap,
-              1
-            )}`;
-          }
+        if (key === 'data') {
+          return `${colorizeKey(key)}: ${colorizedStringify(
+            value,
+            colorMap,
+            1
+          )}`;
+        }
 
-          if (key === 'error') {
-            return `${colorizeKey(key)}: ${colorizedStringify(value, {}, 1)}`;
-          }
+        if (key === 'error') {
+          return `${colorizeKey(key)}: ${colorizedStringify(value, {}, 1)}`;
+        }
 
-          return `${colorizeKey(key)}: ${colorizeMethod(value)}`;
-        })
-        .join('\n') + '\n'
-    );
+        return `${colorizeKey(key)}: ${colorizeMethod(value)}`;
+      })
+      .join('\n')}\n`;
   };
 
   private createDefaultLogger(): ILogger {

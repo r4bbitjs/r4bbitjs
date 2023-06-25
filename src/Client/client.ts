@@ -23,6 +23,7 @@ import { extractAndSetReqId } from '../Common/requestTracer/extractAndSetReqId';
 import { extractReqId } from '../Common/requestTracer/extractReqId';
 import { combineAndSetReqIds } from '../Common/requestTracer/combineAndSetReqIds';
 import { logger } from '../Common/logger/logger';
+import { HEADER_REQUEST_ID } from '../Common/types';
 
 const DEFAULT_TIMEOUT = 30_000;
 
@@ -91,20 +92,16 @@ export class Client {
     }
   }
 
-  public async publishRPCMessage<ResponseType>(
-    message: Buffer | string | unknown,
-    options: ClientRPCOptions
-  ): Promise<ResponseType> {
-    const { exchangeName, replyQueueName, routingKey } = options;
-    const prefixedReplyQueueName = `reply.${replyQueueName}`;
-
-    const clientConsumeFunction = (msg: ConsumeMessage) => {
+  private clientConsumeFunction =
+    (routingKey: string, options: ClientRPCOptions) =>
+    (msg: ConsumeMessage) => {
       extractAndSetReqId(msg.properties.headers);
       logger.communicationLog({
         data: prepareResponse(msg),
         actor: 'Rpc Client',
         action: 'receive',
         topic: routingKey,
+        requestId: msg.properties.headers[HEADER_REQUEST_ID],
         isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
       });
       this.eventEmitter.emit(
@@ -112,6 +109,13 @@ export class Client {
         prepareResponse(msg, options?.responseContains)
       );
     };
+
+  public async publishRPCMessage<ResponseType>(
+    message: Buffer | string | unknown,
+    options: ClientRPCOptions
+  ): Promise<ResponseType> {
+    const { exchangeName, replyQueueName, routingKey } = options;
+    const prefixedReplyQueueName = `reply.${replyQueueName}`;
 
     await ConnectionSet.assert(
       this.channelWrapper,
@@ -123,7 +127,7 @@ export class Client {
     try {
       await this.channelWrapper.consume(
         prefixedReplyQueueName,
-        clientConsumeFunction,
+        this.clientConsumeFunction(routingKey, options),
         {
           ...options?.consumeOptions,
           noAck: true,

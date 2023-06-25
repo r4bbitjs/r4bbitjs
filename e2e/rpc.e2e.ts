@@ -23,7 +23,6 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
         if (!msg) {
           return;
         }
-        console.log('incomin message', msg);
         await reply((msg as { content: string }).content);
       }, processingTime);
     };
@@ -50,20 +49,15 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
     }
   );
 
-  const response = await client.publishRPCMessage<typeof objectMessage>(
-    objectMessage,
-    {
-      exchangeName,
-      routingKey,
-      replyQueueName,
-      timeout: 5_000,
-      responseContains: {
-        content: true,
-        headers: true,
-        signature: true,
-      },
-    }
-  );
-
-  console.log('response', response, typeof response);
+  await client.publishRPCMessage<typeof objectMessage>(objectMessage, {
+    exchangeName,
+    routingKey,
+    replyQueueName,
+    timeout: 5_000,
+    responseContains: {
+      content: true,
+      headers: true,
+      signature: true,
+    },
+  });
 })();

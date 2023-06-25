@@ -19,4 +19,4 @@ export type MessageType = 'json' | 'string' | 'object';
 export const HEADER_SEND_TYPE = 'x-send-type';
 export const HEADER_RECEIVE_TYPE = 'x-receive-type';
 export const HEADER_REPLY_SIGNATURE = 'x-reply-signature';
-export const HEADER_REQUEST_ID = 'x-reply-signature';
+export const HEADER_REQUEST_ID = 'x-request-id';

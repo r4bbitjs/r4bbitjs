@@ -2,7 +2,7 @@ import { ChannelWrapper, ConnectionUrl } from 'amqp-connection-manager';
 import { ConsumeMessage } from 'amqplib';
 import { encodeMessage } from '../Common/encodeMessage/encodeMessage';
 import { prepareHeaders } from '../Common/prepareHeaders/prepareHeaders';
-import { HEADER_RECEIVE_TYPE } from '../Common/types';
+import { HEADER_RECEIVE_TYPE, HEADER_REQUEST_ID } from '../Common/types';
 import { initRabbit } from '../Init/init';
 import { InitRabbitOptions } from '../Init/init.type';
 import {
@@ -161,6 +161,8 @@ export class Server {
                 isServer: true,
                 signature: options?.replySignature,
                 receiveType: receiveType,
+                requestId:
+                  consumedMessage.properties.headers[HEADER_REQUEST_ID],
               }),
             }
           );
@@ -198,8 +200,6 @@ export class Server {
             ...options?.responseContains,
             signature: false,
           });
-
-          extractAndSetReqId(consumeMessage.properties.headers);
           logger.communicationLog({
             data: preparedResponse,
             actor: 'Rpc Server',

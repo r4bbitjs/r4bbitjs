@@ -87,7 +87,7 @@ const checkMessagesDispatch = async (url: ConnectionUrl | ConnectionUrl[]) => {
       routingKey: 'something.test2',
       sendType: 'json',
     });
-  }, 1000);
+  }, 1_000);
 };
 
 (async () => {
