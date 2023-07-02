@@ -9,7 +9,8 @@ export type LogLevel = 'info' | 'debug' | 'error';
 export type ObjectOrString = object | string;
 
 export type LoggerOptions = {
-  isPretty: boolean;
+  isColor?: boolean;
+  isJson?: boolean;
 };
 
 export type LogObject = {

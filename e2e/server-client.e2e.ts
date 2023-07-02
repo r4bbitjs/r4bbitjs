@@ -5,7 +5,7 @@ import { getServer } from '../src/Server/server';
 import { AckHandler } from '../src/Server/server.type';
 import { testReadyObjects } from './test-objects';
 import winston from 'winston';
-import { setLogger } from '../src/Common/logger/logger';
+import { setupR4bbit } from '../src/Common/setupRabbit/setupRabbit';
 
 const handlerFunc: AckHandler =
   ({ ack }) =>
@@ -52,7 +52,14 @@ const checkMessagesDispatch = async (url: ConnectionUrl | ConnectionUrl[]) => {
     error: winstonLogger.error.bind(winstonLogger),
   };
 
-  setLogger(falseLog);
+  setupR4bbit({
+    logger: {
+      engine: falseLog,
+      options: {
+        isJson: false,
+      },
+    },
+  });
   const server = await getServer(url);
   const client = await getClient(url);
 

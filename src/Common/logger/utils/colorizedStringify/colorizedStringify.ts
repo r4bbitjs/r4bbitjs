@@ -19,6 +19,7 @@ export const colorizedStringify = (
   obj: unknown,
   colorMap: Record<string, string> = {},
   level = 0
+  isColor = true,
 ): string => {
   if (typeof obj === 'number') {
     return colorizeNumber(String(obj));

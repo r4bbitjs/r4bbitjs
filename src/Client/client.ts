@@ -18,10 +18,7 @@ import {
 } from '../Common/prepareHeaders/prepareHeaders';
 import { Subscription, Subject, Observer } from 'rxjs';
 import { ConnectionSet } from '../Common/cache/cache';
-import {
-  logMqClose,
-  logMultipleRepliesReceived,
-} from '../Common/logger/utils/logMqMessage';
+import { logMqClose } from '../Common/logger/utils/logMqMessage';
 import { extractAndSetReqId } from '../Common/RequestTracer/extractAndSetReqId';
 import { logger } from '../Common/logger/logger';
 import { HEADER_REQUEST_ID } from '../Common/types';
@@ -55,9 +52,9 @@ export class Client {
   ) {
     const { exchangeName, routingKey } = options;
     await ConnectionSet.assert(this.channelWrapper, exchangeName, '', '');
+    const createdReqId = fetchReqId();
 
     try {
-      const createdReqId = fetchReqId();
       const requestTracer = RequestTracer.getInstance();
       requestTracer.setRequestId && requestTracer.setRequestId(createdReqId);
 
@@ -95,6 +92,7 @@ export class Client {
         topic: routingKey,
         isDataHidden: options?.loggerOptions?.isDataHidden,
         action: 'publish',
+        requestId: createdReqId,
       });
       throw err;
     }
@@ -124,6 +122,9 @@ export class Client {
   ): Promise<ResponseType> {
     const { exchangeName, replyQueueName, routingKey } = options;
     const prefixedReplyQueueName = `reply.${replyQueueName}`;
+    const createdReqId = fetchReqId();
+    const requestTracer = RequestTracer.getInstance();
+    requestTracer.setRequestId && requestTracer.setRequestId(createdReqId);
 
     await ConnectionSet.assert(
       this.channelWrapper,
@@ -154,6 +155,7 @@ export class Client {
         actor: 'Rpc Client',
         topic: routingKey,
         isDataHidden: options.loggerOptions?.isConsumeDataHidden,
+        requestId: createdReqId,
       });
       throw err;
     }
@@ -171,6 +173,7 @@ export class Client {
       const timeoutValue = options?.timeout ?? DEFAULT_TIMEOUT;
       const timeout = setTimeout(() => {
         emitter.removeListener(String(corelationId), listener);
+
         const timeoutMessage = `Timeout of ${timeoutValue}ms occured for the given rpc message`;
         logger.communicationLog({
           data: message,
@@ -178,15 +181,11 @@ export class Client {
           topic: routingKey,
           isDataHidden: !!options?.loggerOptions?.isSendDataHidden,
           action: 'publish',
+          requestId: createdReqId,
         });
 
         reject(timeoutMessage);
       }, timeoutValue);
-
-      const createdReqId = fetchReqId();
-
-      const requestTracer = RequestTracer.getInstance();
-      requestTracer.setRequestId && requestTracer.setRequestId(createdReqId);
 
       logger.communicationLog({
         data: message,
@@ -238,6 +237,10 @@ export class Client {
     const { exchangeName, replyQueueName, routingKey } = options;
     const prefixedReplyQueueName = `reply.${replyQueueName}`;
 
+    const createdReqId = fetchReqId();
+    const requestTracer = RequestTracer.getInstance();
+    requestTracer.setRequestId && requestTracer.setRequestId(createdReqId);
+
     const corelationId = await nanoid();
     this.messageMap.set(corelationId, new Subject());
 
@@ -283,8 +286,6 @@ export class Client {
             (reply: ClientObservable) => reply.preparedResponse
           );
           clearTimeout(timeout);
-          logMultipleRepliesReceived(preparedResponses);
-
           resolve(preparedResponses);
           this.removeSubject(corelationId, subscription);
         },
@@ -315,9 +316,6 @@ export class Client {
         }
       );
 
-      const createdReqId = fetchReqId();
-      const requestTracer = RequestTracer.getInstance();
-      requestTracer.setRequestId && requestTracer.setRequestId(createdReqId);
       logger.communicationLog({
         data: message,
         actor: 'Rpc Client',
@@ -343,6 +341,22 @@ export class Client {
           correlationId: corelationId,
         }
       );
+    }).catch((err) => {
+      logger.communicationLog({
+        level: 'error',
+        error: {
+          description: '💥 An error occurred while receiving message',
+          message: (err as Error).message,
+          stack: (err as Error).stack || '',
+        },
+        action: 'receive',
+        data: message,
+        actor: 'Rpc Client',
+        topic: routingKey,
+        isDataHidden: options.loggerOptions?.isConsumeDataHidden,
+        requestId: createdReqId,
+      });
+      throw err;
     });
   }
 

@@ -21,9 +21,12 @@ import { fetchReqId } from '../prepareHeaders/prepareHeaders';
 const hideTheData = (message: unknown, isDataHidden?: boolean) =>
   !isDataHidden ? convertToLoggableType(message) : '[🕵️ data-is-hidden]';
 
+type IColorMap = (isColor: boolean) => Record<string, string>;
+
 export class Logger {
-  private options = {
-    isPretty: true,
+  private options: LoggerOptions = {
+    isColor: true,
+    isJson: true,
   };
 
   constructor(private _loggerEngine?: ILogger) {}
@@ -77,24 +80,39 @@ export class Logger {
     logObject.requestId = logObject.requestId ?? fetchReqId();
     logObject.data = hideTheData(logObject.data, logObject.isDataHidden);
 
-    const coloredLog = this.prepareLog(logObject);
-    this.logger[logObject.level ?? 'info'](coloredLog);
+    const preparedLog = this.options.isJson
+      ? JSON.stringify(logObject)
+      : this.prettifyLog(logObject);
+
+    this.logger[logObject.level ?? 'info'](preparedLog);
   }
 
-  colorTable: Record<string, chalk.Chalk> = {
-    actor: chalk.hex(monokaiColorTheme.Green),
-    action: chalk.hex(monokaiColorTheme.Green),
-    topic: chalk.hex(monokaiColorTheme.Green),
-    requestId: chalk.hex(monokaiColorTheme.Green),
-    data: chalk.hex(monokaiColorTheme.Green),
-    level: chalk.hex(monokaiColorTheme.Green),
-    error: chalk.hex(monokaiColorTheme.Green),
-  };
+  empty = (str: string) => str;
 
-  prepareLog = (communicationLog: CommunicationLog): string => {
+  colorTable: Record<string, chalk.Chalk> = this.options.isColor
+    ? {
+        actor: chalk.hex(monokaiColorTheme.Green),
+        action: chalk.hex(monokaiColorTheme.Green),
+        topic: chalk.hex(monokaiColorTheme.Green),
+        requestId: chalk.hex(monokaiColorTheme.Green),
+        data: chalk.hex(monokaiColorTheme.Green),
+        level: chalk.hex(monokaiColorTheme.Green),
+        error: chalk.hex(monokaiColorTheme.Green),
+      }
+    : {
+        actor: this.empty as chalk.Chalk,
+        action: this.empty as chalk.Chalk,
+        topic: this.empty as chalk.Chalk,
+        requestId: this.empty as chalk.Chalk,
+        data: this.empty as chalk.Chalk,
+        level: this.empty as chalk.Chalk,
+        error: this.empty as chalk.Chalk,
+      };
+
+  prettifyLog = (communicationLog: CommunicationLog): string => {
     delete communicationLog.isDataHidden;
 
-    const { colorizeKey } = colorMap;
+    const { colorizeKey } = colorMap(this.options.isColor);
 
     return `\n${Object.entries(communicationLog)
       .map(([key, value]) => {
@@ -109,12 +127,15 @@ export class Logger {
           return `${colorizeKey(key)}: ${colorizedStringify(
             value,
             colorMap,
-            1
+            1,
+            this.options.isColor
           )}`;
         }
 
         if (key === 'error') {
-          return `${colorizeKey(key)}: ${colorizedStringify(value, {}, 1)}`;
+          return `${colorizeKey(key)}: ${
+            (colorizedStringify(value, {}, 1), this.options.isColor)
+          }`;
         }
 
         return `${colorizeKey(key)}: ${colorizeMethod(value)}`;

@@ -45,6 +45,7 @@ export class Server {
     if (!this.channelWrapper) {
       throw new Error('You have to trigger init method first');
     }
+    let tempRequestId: string | undefined;
 
     const { exchangeName, queueName, routingKey } = connection;
 
@@ -84,6 +85,7 @@ export class Server {
           );
 
           const reqId = extractAndSetReqId(msg.properties.headers);
+          tempRequestId = reqId;
 
           // if preparedResponse pass to the handlerFunc
           logger.communicationLog({
@@ -111,6 +113,7 @@ export class Server {
         actor: 'Server',
         topic: routingKey,
         isDataHidden: false,
+        requestId: tempRequestId,
       });
       throw err;
     }
@@ -124,7 +127,7 @@ export class Server {
     if (!this.channelWrapper) {
       throw new Error('You have to trigger init method first');
     }
-
+    let tempRequestId: string | undefined;
     const { exchangeName, queueName, routingKey } = connection;
 
     const reply =
@@ -144,6 +147,7 @@ export class Server {
           consumedMessage.properties.headers[HEADER_RECEIVE_TYPE];
 
         const reqId = extractAndSetReqId(consumedMessage.properties.headers);
+        tempRequestId = reqId;
         logger.communicationLog({
           data: replyMessage,
           actor: 'Rpc Server',
@@ -183,6 +187,7 @@ export class Server {
             actor: 'Rpc Server',
             topic: routingKey,
             isDataHidden: options?.loggerOptions?.isSendDataHidden,
+            requestId: tempRequestId,
           });
         }
       };
@@ -232,6 +237,7 @@ export class Server {
         actor: 'Rpc Server',
         topic: routingKey,
         isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
+        requestId: tempRequestId,
       });
     }
   }

@@ -13,12 +13,16 @@ export const monokaiColorTheme = {
   Red: '#FF6188',
 };
 
-export const colorMap = {
-  colorizeKey: chalk.hex(monokaiColorTheme.Blue).italic,
+const returnWhatTakes = (str: string) => str;
+
+export const colorMap = (isColor = true) => ({
+  colorizeKey: isColor
+    ? chalk.hex(monokaiColorTheme.Blue).italic
+    : returnWhatTakes,
   colorizeString: chalk.hex(monokaiColorTheme.Purple),
   colorizeNumber: chalk.hex(monokaiColorTheme.White),
   colorizeBoolean: chalk.hex(monokaiColorTheme.Background),
   colorizeNull: chalk.hex(monokaiColorTheme.Pink),
   colorizeUndefined: chalk.hex(monokaiColorTheme.Pink),
   colorizeArray: chalk.hex(monokaiColorTheme.Red),
-};
+});
