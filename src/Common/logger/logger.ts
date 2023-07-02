@@ -8,7 +8,7 @@ import {
   LoggerOptions,
   ObjectOrString,
 } from './logger.type';
-import { RequestTracer } from '../requestTracer/requestTracer';
+import { RequestTracer } from '../RequestTracer/requestTracer';
 import { convertToLoggableType } from './utils/convertToLoggableType';
 import { colorizedStringify } from './utils/colorizedStringify/colorizedStringify';
 import chalk from 'chalk';

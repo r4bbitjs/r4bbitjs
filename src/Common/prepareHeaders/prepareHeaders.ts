@@ -1,4 +1,4 @@
-import { RequestTracer } from '../requestTracer/requestTracer';
+import { RequestTracer } from '../RequestTracer/requestTracer';
 import {
   HEADER_SEND_TYPE,
   HEADER_RECEIVE_TYPE,
@@ -34,9 +34,11 @@ export const prepareHeaders = (headersParams: HeadersParams) => {
     };
   }
 
+  const reqID = requestId ?? fetchReqId();
+
   return {
     [HEADER_SEND_TYPE]: sendType ?? defaultMsgType,
     [HEADER_RECEIVE_TYPE]: receiveType ?? defaultMsgType,
-    [HEADER_REQUEST_ID]: requestId ?? fetchReqId(),
+    [HEADER_REQUEST_ID]: reqID,
   };
 };

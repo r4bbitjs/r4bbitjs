@@ -12,18 +12,20 @@ import {
   ClientObservable,
   ClientMultipleRPC,
 } from './client.type';
-import { prepareHeaders } from '../Common/prepareHeaders/prepareHeaders';
+import {
+  fetchReqId,
+  prepareHeaders,
+} from '../Common/prepareHeaders/prepareHeaders';
 import { Subscription, Subject, Observer } from 'rxjs';
 import { ConnectionSet } from '../Common/cache/cache';
 import {
   logMqClose,
   logMultipleRepliesReceived,
 } from '../Common/logger/utils/logMqMessage';
-import { extractAndSetReqId } from '../Common/requestTracer/extractAndSetReqId';
-import { extractReqId } from '../Common/requestTracer/extractReqId';
-import { combineAndSetReqIds } from '../Common/requestTracer/combineAndSetReqIds';
+import { extractAndSetReqId } from '../Common/RequestTracer/extractAndSetReqId';
 import { logger } from '../Common/logger/logger';
 import { HEADER_REQUEST_ID } from '../Common/types';
+import { RequestTracer } from '../Common/RequestTracer/requestTracer';
 
 const DEFAULT_TIMEOUT = 30_000;
 
@@ -55,12 +57,17 @@ export class Client {
     await ConnectionSet.assert(this.channelWrapper, exchangeName, '', '');
 
     try {
+      const createdReqId = fetchReqId();
+      const requestTracer = RequestTracer.getInstance();
+      requestTracer.setRequestId && requestTracer.setRequestId(createdReqId);
+
       logger.communicationLog({
         data: message,
         actor: 'Client',
         topic: routingKey,
         isDataHidden: options?.loggerOptions?.isDataHidden,
         action: 'publish',
+        requestId: createdReqId,
       });
       await this.channelWrapper.publish(
         exchangeName,
@@ -70,6 +77,7 @@ export class Client {
           headers: prepareHeaders({
             isServer: false,
             sendType: options?.sendType,
+            requestId: createdReqId,
           }),
           ...options?.publishOptions,
         }
@@ -175,12 +183,18 @@ export class Client {
         reject(timeoutMessage);
       }, timeoutValue);
 
+      const createdReqId = fetchReqId();
+
+      const requestTracer = RequestTracer.getInstance();
+      requestTracer.setRequestId && requestTracer.setRequestId(createdReqId);
+
       logger.communicationLog({
         data: message,
         actor: 'Rpc Client',
         topic: routingKey,
         isDataHidden: !!options?.loggerOptions?.isSendDataHidden,
         action: 'publish',
+        requestId: createdReqId,
       });
       await this.channelWrapper.publish(
         exchangeName,
@@ -191,6 +205,7 @@ export class Client {
             isServer: false,
             sendType: options?.sendType,
             receiveType: options?.receiveType,
+            requestId: createdReqId,
           }),
           ...options?.publishOptions,
           replyTo: prefixedReplyQueueName,
@@ -231,17 +246,19 @@ export class Client {
       const allReplies: ClientObservable[] = [];
 
       const clientConsumeFunction = (msg: ConsumeMessage) => {
+        const reqId = extractAndSetReqId(msg.properties.headers);
         logger.communicationLog({
           data: prepareResponse(msg),
           actor: 'Rpc Client',
           topic: routingKey,
           isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
           action: 'receive',
+          requestId: reqId,
         });
 
         this.getCorrlationIdSubject(msg?.properties.correlationId).next({
           preparedResponse: prepareResponse(msg, options?.responseContains),
-          reqId: extractReqId(msg?.properties?.headers),
+          reqId: reqId,
         });
       };
 
@@ -257,18 +274,15 @@ export class Client {
             this.getCorrlationIdSubject(corelationId).complete();
           }
         },
-        // currently no errorous case
         error: (error: Error) => {
           reject(error);
           this.removeSubject(corelationId, subscription);
         },
         complete: () => {
-          combineAndSetReqIds(allReplies);
           const preparedResponses = allReplies.map(
             (reply: ClientObservable) => reply.preparedResponse
           );
           clearTimeout(timeout);
-
           logMultipleRepliesReceived(preparedResponses);
 
           resolve(preparedResponses);
@@ -301,13 +315,18 @@ export class Client {
         }
       );
 
+      const createdReqId = fetchReqId();
+      const requestTracer = RequestTracer.getInstance();
+      requestTracer.setRequestId && requestTracer.setRequestId(createdReqId);
       logger.communicationLog({
         data: message,
         actor: 'Rpc Client',
         topic: routingKey,
         isDataHidden: options?.loggerOptions?.isSendDataHidden,
         action: 'publish',
+        requestId: createdReqId,
       });
+
       await this.channelWrapper.publish(
         exchangeName,
         routingKey,
@@ -317,6 +336,7 @@ export class Client {
             isServer: false,
             sendType: options?.sendType,
             receiveType: options?.receiveType,
+            requestId: createdReqId,
           }),
           ...options?.publishOptions,
           replyTo: prefixedReplyQueueName,

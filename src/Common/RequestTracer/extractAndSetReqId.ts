@@ -1,14 +1,14 @@
-import { HEADER_REQUEST_ID } from '../types';
-import { RequestTracer } from './requestTracer';
 import { nanoid } from 'nanoid';
+import { RequestTracer } from './requestTracer';
 
 const requestTracer = RequestTracer.getInstance();
 
-export const extractAndSetReqId = (headers: Record<string, string>) => {
-  if (!requestTracer.setRequestId) {
-    return;
+export const extractAndSetReqId = (headers: Record<string, string>): string => {
+  const requestId = headers['x-request-id'] ?? nanoid();
+
+  if (requestTracer.setRequestId) {
+    requestTracer.setRequestId(requestId);
   }
 
-  const requestId = headers[HEADER_REQUEST_ID] ?? nanoid();
-  requestTracer.setRequestId(requestId);
+  return requestId;
 };

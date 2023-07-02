@@ -35,5 +35,5 @@ export type ClientMultipleRPC = {
 
 export type ClientObservable = {
   preparedResponse: Record<string, unknown>;
-  reqId: string;
+  reqId: string | undefined;
 };

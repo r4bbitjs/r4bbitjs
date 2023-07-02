@@ -2,7 +2,7 @@ import { ChannelWrapper, ConnectionUrl } from 'amqp-connection-manager';
 import { ConsumeMessage } from 'amqplib';
 import { encodeMessage } from '../Common/encodeMessage/encodeMessage';
 import { prepareHeaders } from '../Common/prepareHeaders/prepareHeaders';
-import { HEADER_RECEIVE_TYPE, HEADER_REQUEST_ID } from '../Common/types';
+import { HEADER_RECEIVE_TYPE } from '../Common/types';
 import { initRabbit } from '../Init/init';
 import { InitRabbitOptions } from '../Init/init.type';
 import {
@@ -16,7 +16,7 @@ import {
 import { ConnectionSet } from '../Common/cache/cache';
 import { logMqClose } from '../Common/logger/utils/logMqMessage';
 import { prepareResponse } from '../Common/prepareResponse/prepareResponse';
-import { extractAndSetReqId } from '../Common/requestTracer/extractAndSetReqId';
+import { extractAndSetReqId } from '../Common/RequestTracer/extractAndSetReqId';
 import { logger } from '../Common/logger/logger';
 
 export class Server {
@@ -83,7 +83,7 @@ export class Server {
             options?.responseContains
           );
 
-          extractAndSetReqId(msg.properties.headers);
+          const reqId = extractAndSetReqId(msg.properties.headers);
 
           // if preparedResponse pass to the handlerFunc
           logger.communicationLog({
@@ -92,6 +92,7 @@ export class Server {
             topic: routingKey,
             isDataHidden: options?.loggerOptions?.isDataHidden,
             action: 'receive',
+            requestId: reqId,
           });
           return onMessage(preparedResponse);
         },
@@ -142,12 +143,14 @@ export class Server {
         const receiveType =
           consumedMessage.properties.headers[HEADER_RECEIVE_TYPE];
 
+        const reqId = extractAndSetReqId(consumedMessage.properties.headers);
         logger.communicationLog({
           data: replyMessage,
           actor: 'Rpc Server',
           topic: replyTo,
           isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
           action: 'publish',
+          requestId: reqId,
         });
         try {
           await this.channelWrapper.publish(
@@ -161,8 +164,7 @@ export class Server {
                 isServer: true,
                 signature: options?.replySignature,
                 receiveType: receiveType,
-                requestId:
-                  consumedMessage.properties.headers[HEADER_REQUEST_ID],
+                requestId: reqId,
               }),
             }
           );
@@ -196,6 +198,11 @@ export class Server {
       await this.channelWrapper.consume(
         queueName,
         (consumeMessage) => {
+          console.log(
+            'Server received the log',
+            consumeMessage.properties.headers
+          );
+          const reqId = extractAndSetReqId(consumeMessage.properties.headers);
           const preparedResponse = prepareResponse(consumeMessage, {
             ...options?.responseContains,
             signature: false,
@@ -206,6 +213,7 @@ export class Server {
             topic: routingKey,
             isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
             action: 'receive',
+            requestId: reqId,
           });
           return handlerFunction(reply(consumeMessage))(preparedResponse);
         },
