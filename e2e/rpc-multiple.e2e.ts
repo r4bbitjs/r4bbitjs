@@ -17,7 +17,6 @@ const getRandomIntegral = () => Math.floor(Math.random() * 100);
         if (!msg) {
           return;
         }
-        console.log('incomin message', msg);
         await reply(msg);
       }, processingTime);
     };
@@ -52,7 +51,7 @@ const getRandomIntegral = () => Math.floor(Math.random() * 100);
     }
   );
 
-  const response = await client.publishMultipleRPC(objectMessage, {
+  await client.publishMultipleRPC(objectMessage, {
     exchangeName,
     routingKey,
     replyQueueName,
@@ -64,6 +63,4 @@ const getRandomIntegral = () => Math.floor(Math.random() * 100);
       signature: true,
     },
   });
-
-  console.log('response', response, typeof response);
 })();

@@ -31,6 +31,9 @@ export type ServerConnection = {
 export type ServerOptions = {
   consumeOptions?: Options.Consume;
   responseContains?: ServerResponseContains;
+  loggerOptions?: {
+    isDataHidden?: boolean;
+  };
 };
 
 export type ServerRPCOptions = {
@@ -40,4 +43,8 @@ export type ServerRPCOptions = {
   correlationId?: string;
   replySignature?: string;
   responseContains?: ServerResponseContains;
+  loggerOptions?: {
+    isSendDataHidden?: boolean;
+    isConsumeDataHidden?: boolean;
+  };
 };

@@ -17,3 +17,4 @@ plugins:
 rules:
   unused-imports/no-unused-imports-ts: error
   prettier/prettier: error
+ignorePatterns: ['**/dist']

@@ -17,7 +17,6 @@ describe('rpc e2e tests', () => {
           if (!msg) {
             return;
           }
-          console.log('incomin message', msg);
           await reply((msg as { content: string }).content);
         }, processingTime);
       };

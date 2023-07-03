@@ -21,7 +21,6 @@ describe('rpc unknown replies tests', () => {
           if (!msg) {
             return;
           }
-          console.log('incomin message', msg);
           await reply(msg);
         }, processingTime);
       };
@@ -79,21 +78,16 @@ describe('rpc unknown replies tests', () => {
         signature: true,
       },
       handler: async (msg) => {
-        let file: number;
         switch (msg.signature) {
           case 'server-1':
-            file = await new Promise((resolve) =>
+            await new Promise((resolve) =>
               setTimeout(() => resolve(123), 1_000)
             );
-            console.log('file', file);
-            console.log('Server-1 Received:', msg);
             break;
           case 'server-2':
-            console.log('Server-2 Received:', msg);
             break;
           default:
             await new Promise((r) => setTimeout(r, 1_000));
-            console.log('Unknown resource Received', msg);
         }
       },
     });
@@ -119,7 +113,5 @@ describe('rpc unknown replies tests', () => {
     (response as unknown as typeof expectedResults).forEach((res) => {
       expect(expectedResults).toContainEqual(res);
     });
-
-    console.log('response', response);
   });
 });

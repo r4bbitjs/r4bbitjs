@@ -1,7 +1,7 @@
 import { ChannelWrapper, ConnectionUrl } from 'amqp-connection-manager';
 import { ConsumeMessage } from 'amqplib';
 import { EventEmitter } from 'events';
-import { v4 as uuidv4 } from 'uuid';
+import { nanoid } from 'nanoid/async';
 import { encodeMessage } from '../Common/encodeMessage/encodeMessage';
 import { prepareResponse } from '../Common/prepareResponse/prepareResponse';
 import { initRabbit } from '../Init/init';
@@ -12,9 +12,17 @@ import {
   ClientObservable,
   ClientMultipleRPC,
 } from './client.type';
-import { prepareHeaders } from '../Common/prepareHeaders/prepareHeaders';
+import {
+  fetchReqId,
+  prepareHeaders,
+} from '../Common/prepareHeaders/prepareHeaders';
 import { Subscription, Subject, Observer } from 'rxjs';
 import { ConnectionSet } from '../Common/cache/cache';
+import { logMqClose } from '../Common/logger/utils/logMqMessage';
+import { extractAndSetReqId } from '../Common/RequestTracer/extractAndSetReqId';
+import { logger } from '../Common/logger/logger';
+import { HEADER_REQUEST_ID } from '../Common/types';
+import { RequestTracer } from '../Common/RequestTracer/requestTracer';
 
 const DEFAULT_TIMEOUT = 30_000;
 
@@ -43,22 +51,70 @@ export class Client {
     options: ClientOptions
   ) {
     const { exchangeName, routingKey } = options;
-
     await ConnectionSet.assert(this.channelWrapper, exchangeName, '', '');
+    const createdReqId = fetchReqId();
 
-    await this.channelWrapper.publish(
-      exchangeName,
-      routingKey,
-      encodeMessage(message, options?.sendType),
-      {
-        headers: prepareHeaders({
-          isServer: false,
-          sendType: options?.sendType,
-        }),
-        ...options?.publishOptions,
-      }
-    );
+    try {
+      const requestTracer = RequestTracer.getInstance();
+      requestTracer.setRequestId && requestTracer.setRequestId(createdReqId);
+
+      logger.communicationLog({
+        data: message,
+        actor: 'Client',
+        topic: routingKey,
+        isDataHidden: options?.loggerOptions?.isDataHidden,
+        action: 'publish',
+        requestId: createdReqId,
+      });
+      await this.channelWrapper.publish(
+        exchangeName,
+        routingKey,
+        encodeMessage(message, options?.sendType),
+        {
+          headers: prepareHeaders({
+            isServer: false,
+            sendType: options?.sendType,
+            requestId: createdReqId,
+          }),
+          ...options?.publishOptions,
+        }
+      );
+    } catch (err: unknown) {
+      logger.communicationLog({
+        level: 'error',
+        error: {
+          description: '💥 An error occurred while publishing message',
+          message: (err as Error).message,
+          stack: (err as Error).stack || '',
+        },
+        data: message,
+        actor: 'Client',
+        topic: routingKey,
+        isDataHidden: options?.loggerOptions?.isDataHidden,
+        action: 'publish',
+        requestId: createdReqId,
+      });
+      throw err;
+    }
   }
+
+  private clientConsumeFunction =
+    (routingKey: string, options: ClientRPCOptions) =>
+    (msg: ConsumeMessage) => {
+      extractAndSetReqId(msg.properties.headers);
+      logger.communicationLog({
+        data: prepareResponse(msg),
+        actor: 'Rpc Client',
+        action: 'receive',
+        topic: routingKey,
+        requestId: msg.properties.headers[HEADER_REQUEST_ID],
+        isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
+      });
+      this.eventEmitter.emit(
+        msg?.properties.correlationId,
+        prepareResponse(msg, options?.responseContains)
+      );
+    };
 
   public async publishRPCMessage<ResponseType>(
     message: Buffer | string | unknown,
@@ -66,13 +122,9 @@ export class Client {
   ): Promise<ResponseType> {
     const { exchangeName, replyQueueName, routingKey } = options;
     const prefixedReplyQueueName = `reply.${replyQueueName}`;
-
-    const clientConsumeFunction = (msg: ConsumeMessage | null) => {
-      this.eventEmitter.emit(
-        msg?.properties.correlationId,
-        prepareResponse(msg, options?.responseContains)
-      );
-    };
+    const createdReqId = fetchReqId();
+    const requestTracer = RequestTracer.getInstance();
+    requestTracer.setRequestId && requestTracer.setRequestId(createdReqId);
 
     await ConnectionSet.assert(
       this.channelWrapper,
@@ -81,18 +133,36 @@ export class Client {
       prefixedReplyQueueName
     );
 
-    await this.channelWrapper.consume(
-      prefixedReplyQueueName,
-      clientConsumeFunction,
-      {
-        ...options?.consumeOptions,
-        noAck: true,
-      }
-    );
+    try {
+      await this.channelWrapper.consume(
+        prefixedReplyQueueName,
+        this.clientConsumeFunction(routingKey, options),
+        {
+          ...options?.consumeOptions,
+          noAck: true,
+        }
+      );
+    } catch (err: unknown) {
+      logger.communicationLog({
+        level: 'error',
+        error: {
+          description: '💥 An error occurred while receiving message',
+          message: (err as Error).message,
+          stack: (err as Error).stack || '',
+        },
+        action: 'receive',
+        data: message,
+        actor: 'Rpc Client',
+        topic: routingKey,
+        isDataHidden: options.loggerOptions?.isConsumeDataHidden,
+        requestId: createdReqId,
+      });
+      throw err;
+    }
 
     // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
-      const corelationId = uuidv4();
+      const corelationId = await nanoid();
 
       const listener = (msg: ConsumeMessage) => {
         clearTimeout(timeout);
@@ -103,10 +173,28 @@ export class Client {
       const timeoutValue = options?.timeout ?? DEFAULT_TIMEOUT;
       const timeout = setTimeout(() => {
         emitter.removeListener(String(corelationId), listener);
-        reject(
-          `timeout of ${timeoutValue}ms occured for the given rpc message`
-        );
+
+        const timeoutMessage = `Timeout of ${timeoutValue}ms occured for the given rpc message`;
+        logger.communicationLog({
+          data: message,
+          actor: 'Rpc Client',
+          topic: routingKey,
+          isDataHidden: !!options?.loggerOptions?.isSendDataHidden,
+          action: 'publish',
+          requestId: createdReqId,
+        });
+
+        reject(timeoutMessage);
       }, timeoutValue);
+
+      logger.communicationLog({
+        data: message,
+        actor: 'Rpc Client',
+        topic: routingKey,
+        isDataHidden: !!options?.loggerOptions?.isSendDataHidden,
+        action: 'publish',
+        requestId: createdReqId,
+      });
       await this.channelWrapper.publish(
         exchangeName,
         routingKey,
@@ -116,6 +204,7 @@ export class Client {
             isServer: false,
             sendType: options?.sendType,
             receiveType: options?.receiveType,
+            requestId: createdReqId,
           }),
           ...options?.publishOptions,
           replyTo: prefixedReplyQueueName,
@@ -148,17 +237,32 @@ export class Client {
     const { exchangeName, replyQueueName, routingKey } = options;
     const prefixedReplyQueueName = `reply.${replyQueueName}`;
 
-    const corelationId = uuidv4();
+    const createdReqId = fetchReqId();
+    const requestTracer = RequestTracer.getInstance();
+    requestTracer.setRequestId && requestTracer.setRequestId(createdReqId);
+
+    const corelationId = await nanoid();
     this.messageMap.set(corelationId, new Subject());
 
     // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
-      const allReplies: unknown[] = [];
+      const allReplies: ClientObservable[] = [];
 
-      const clientConsumeFunction = (msg: ConsumeMessage | null) => {
-        this.getCorrlationIdSubject(msg?.properties.correlationId).next(
-          prepareResponse(msg, options?.responseContains)
-        );
+      const clientConsumeFunction = (msg: ConsumeMessage) => {
+        const reqId = extractAndSetReqId(msg.properties.headers);
+        logger.communicationLog({
+          data: prepareResponse(msg),
+          actor: 'Rpc Client',
+          topic: routingKey,
+          isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
+          action: 'receive',
+          requestId: reqId,
+        });
+
+        this.getCorrlationIdSubject(msg?.properties.correlationId).next({
+          preparedResponse: prepareResponse(msg, options?.responseContains),
+          reqId: reqId,
+        });
       };
 
       // eslint-disable-next-line prefer-const
@@ -167,24 +271,27 @@ export class Client {
       const observer: Observer<ClientObservable> = {
         next: (data) => {
           allReplies.push(data);
+          options.handler && options.handler(data);
 
           if (allReplies.length === options?.waitedReplies) {
-            resolve(allReplies);
+            this.getCorrlationIdSubject(corelationId).complete();
           }
-
-          options.handler && options.handler(data);
         },
         error: (error: Error) => {
           reject(error);
           this.removeSubject(corelationId, subscription);
         },
         complete: () => {
-          resolve(allReplies);
+          const preparedResponses = allReplies.map(
+            (reply: ClientObservable) => reply.preparedResponse
+          );
+          clearTimeout(timeout);
+          resolve(preparedResponses);
           this.removeSubject(corelationId, subscription);
         },
       };
 
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         this.getCorrlationIdSubject(corelationId).complete();
       }, options?.timeout || DEFAULT_TIMEOUT);
 
@@ -209,6 +316,15 @@ export class Client {
         }
       );
 
+      logger.communicationLog({
+        data: message,
+        actor: 'Rpc Client',
+        topic: routingKey,
+        isDataHidden: options?.loggerOptions?.isSendDataHidden,
+        action: 'publish',
+        requestId: createdReqId,
+      });
+
       await this.channelWrapper.publish(
         exchangeName,
         routingKey,
@@ -218,16 +334,34 @@ export class Client {
             isServer: false,
             sendType: options?.sendType,
             receiveType: options?.receiveType,
+            requestId: createdReqId,
           }),
           ...options?.publishOptions,
           replyTo: prefixedReplyQueueName,
           correlationId: corelationId,
         }
       );
+    }).catch((err) => {
+      logger.communicationLog({
+        level: 'error',
+        error: {
+          description: '💥 An error occurred while receiving message',
+          message: (err as Error).message,
+          stack: (err as Error).stack || '',
+        },
+        action: 'receive',
+        data: message,
+        actor: 'Rpc Client',
+        topic: routingKey,
+        isDataHidden: options.loggerOptions?.isConsumeDataHidden,
+        requestId: createdReqId,
+      });
+      throw err;
     });
   }
 
   public async close() {
+    logMqClose('Client');
     await this.channelWrapper.cancelAll();
     await this.channelWrapper.close();
   }

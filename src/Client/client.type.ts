@@ -8,6 +8,9 @@ export type ClientOptions = {
   routingKey: string;
   sendType?: MessageType;
   publishOptions?: Options.Publish;
+  loggerOptions?: {
+    isDataHidden?: boolean;
+  };
 };
 
 export type ClientRPCOptions = {
@@ -31,5 +34,6 @@ export type ClientMultipleRPC = {
 } & ServerRPCOptions;
 
 export type ClientObservable = {
-  message: Record<string, unknown>;
+  preparedResponse: Record<string, unknown>;
+  reqId: string | undefined;
 };

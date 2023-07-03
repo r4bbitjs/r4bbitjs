@@ -14,7 +14,10 @@ import {
   ServerOptions,
 } from './server.type';
 import { ConnectionSet } from '../Common/cache/cache';
+import { logMqClose } from '../Common/logger/utils/logMqMessage';
 import { prepareResponse } from '../Common/prepareResponse/prepareResponse';
+import { extractAndSetReqId } from '../Common/RequestTracer/extractAndSetReqId';
+import { logger } from '../Common/logger/logger';
 
 export class Server {
   private channelWrapper?: ChannelWrapper;
@@ -42,6 +45,7 @@ export class Server {
     if (!this.channelWrapper) {
       throw new Error('You have to trigger init method first');
     }
+    let tempRequestId: string | undefined;
 
     const { exchangeName, queueName, routingKey } = connection;
 
@@ -54,44 +58,65 @@ export class Server {
     };
 
     const defaultConsumerOptions = options?.consumeOptions ?? { noAck: false };
-    await ConnectionSet.assert(
-      this.channelWrapper,
-      exchangeName,
-      queueName,
-      routingKey
-    );
 
-    await this.channelWrapper.consume(
-      queueName,
-      (msg) => {
-        // if message null
-        if (msg === null) {
-          throw new Error(
-            'Channel has ben canceled,' +
-              ' ref:' +
-              ' https://amqp-node.github.io/amqplib/channel_api.html' +
-              '#channel_consume'
+    try {
+      await ConnectionSet.assert(
+        this.channelWrapper,
+        exchangeName,
+        queueName,
+        routingKey
+      );
+
+      await this.channelWrapper.consume(
+        queueName,
+        (msg: ConsumeMessage) => {
+          // if in options ack => ack !== undef (with acknowledgment)
+          // if in options nack => ack === undef (no acknowledgment)
+          const onMessage = !options?.consumeOptions?.noAck
+            ? (handlerFunction as AckHandler)({
+                ack: simpleAck(msg),
+                nack: simpleNack(msg),
+              })
+            : (handlerFunction as Handler);
+          // if in options responseContains => prepareResponse
+          const preparedResponse = prepareResponse(
+            msg,
+            options?.responseContains
           );
-        }
 
-        // if in options ack => ack !== undef (with acknowledgment)
-        // if in options nack => ack === undef (no acknowledgment)
-        const onMessage = !options?.consumeOptions?.noAck
-          ? (handlerFunction as AckHandler)({
-              ack: simpleAck(msg),
-              nack: simpleNack(msg),
-            })
-          : (handlerFunction as Handler);
-        // if in options responseContains => prepareResponse
-        const preparedResponse = prepareResponse(
-          msg,
-          options?.responseContains
-        );
-        // if preparedResponse pass to the handlerFunc
-        return onMessage(preparedResponse);
-      },
-      defaultConsumerOptions
-    );
+          const reqId = extractAndSetReqId(msg.properties.headers);
+          tempRequestId = reqId;
+
+          // if preparedResponse pass to the handlerFunc
+          logger.communicationLog({
+            data: preparedResponse,
+            actor: 'Server',
+            topic: routingKey,
+            isDataHidden: options?.loggerOptions?.isDataHidden,
+            action: 'receive',
+            requestId: reqId,
+          });
+          return onMessage(preparedResponse);
+        },
+        defaultConsumerOptions
+      );
+    } catch (err) {
+      logger.communicationLog({
+        level: 'error',
+        error: {
+          description: '💥 An error occurred while receiving message',
+          message: (err as Error).message,
+          stack: (err as Error).stack || '',
+        },
+        action: 'receive',
+        data: {},
+        actor: 'Server',
+        topic: routingKey,
+        isDataHidden: false,
+        requestId: tempRequestId,
+      });
+      throw err;
+    }
   }
 
   async registerRPCRoute(
@@ -102,7 +127,7 @@ export class Server {
     if (!this.channelWrapper) {
       throw new Error('You have to trigger init method first');
     }
-
+    let tempRequestId: string | undefined;
     const { exchangeName, queueName, routingKey } = connection;
 
     const reply =
@@ -121,22 +146,50 @@ export class Server {
         const receiveType =
           consumedMessage.properties.headers[HEADER_RECEIVE_TYPE];
 
-        await this.channelWrapper.publish(
-          exchangeName,
-          replyTo,
-          encodeMessage(replyMessage, receiveType),
-          {
-            ...options?.publishOptions,
-            correlationId,
-            headers: prepareHeaders({
-              isServer: true,
-              signature: options?.replySignature,
-              receiveType: receiveType,
-            }),
-          }
-        );
+        const reqId = extractAndSetReqId(consumedMessage.properties.headers);
+        tempRequestId = reqId;
+        logger.communicationLog({
+          data: replyMessage,
+          actor: 'Rpc Server',
+          topic: replyTo,
+          isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
+          action: 'publish',
+          requestId: reqId,
+        });
+        try {
+          await this.channelWrapper.publish(
+            exchangeName,
+            replyTo,
+            encodeMessage(replyMessage, receiveType),
+            {
+              ...options?.publishOptions,
+              correlationId,
+              headers: prepareHeaders({
+                isServer: true,
+                signature: options?.replySignature,
+                receiveType: receiveType,
+                requestId: reqId,
+              }),
+            }
+          );
 
-        this.channelWrapper.ack.call(this.channelWrapper, consumedMessage);
+          this.channelWrapper.ack.call(this.channelWrapper, consumedMessage);
+        } catch (err) {
+          logger.communicationLog({
+            level: 'error',
+            error: {
+              description: '💥 An error occurred while sending message',
+              message: (err as Error).message,
+              stack: (err as Error).stack || '',
+            },
+            action: 'publish',
+            data: replyMessage,
+            actor: 'Rpc Server',
+            topic: routingKey,
+            isDataHidden: options?.loggerOptions?.isSendDataHidden,
+            requestId: tempRequestId,
+          });
+        }
       };
 
     await ConnectionSet.assert(
@@ -146,20 +199,51 @@ export class Server {
       routingKey
     );
 
-    await this.channelWrapper.consume(
-      queueName,
-      (consumeMessage) => {
-        const preparedResponse = prepareResponse(consumeMessage, {
-          ...options?.responseContains,
-          signature: false,
-        });
-        return handlerFunction(reply(consumeMessage))(preparedResponse);
-      },
-      options?.consumeOptions
-    );
+    try {
+      await this.channelWrapper.consume(
+        queueName,
+        (consumeMessage) => {
+          console.log(
+            'Server received the log',
+            consumeMessage.properties.headers
+          );
+          const reqId = extractAndSetReqId(consumeMessage.properties.headers);
+          const preparedResponse = prepareResponse(consumeMessage, {
+            ...options?.responseContains,
+            signature: false,
+          });
+          logger.communicationLog({
+            data: preparedResponse,
+            actor: 'Rpc Server',
+            topic: routingKey,
+            isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
+            action: 'receive',
+            requestId: reqId,
+          });
+          return handlerFunction(reply(consumeMessage))(preparedResponse);
+        },
+        options?.consumeOptions
+      );
+    } catch (err) {
+      logger.communicationLog({
+        level: 'error',
+        error: {
+          description: '💥 An error occurred while receiving message',
+          message: (err as Error).message,
+          stack: (err as Error).stack || '',
+        },
+        action: 'receive',
+        data: {},
+        actor: 'Rpc Server',
+        topic: routingKey,
+        isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
+        requestId: tempRequestId,
+      });
+    }
   }
 
   async close() {
+    logMqClose('Server');
     const channelWrapper = this.getWrapper();
     await channelWrapper.cancelAll();
     await channelWrapper.close();
