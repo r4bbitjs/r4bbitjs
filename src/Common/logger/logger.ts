@@ -1,7 +1,6 @@
 import pino from 'pino';
 import {
   CommunicationLog,
-  CommunicationLogKeys,
   GenericLog,
   ILogger,
   LogLevel,
@@ -11,22 +10,17 @@ import {
 import { RequestTracer } from '../RequestTracer/requestTracer';
 import { convertToLoggableType } from './utils/convertToLoggableType';
 import { colorizedStringify } from './utils/colorizedStringify/colorizedStringify';
-import chalk from 'chalk';
-import {
-  colorMap,
-  monokaiColorTheme,
-} from './utils/colorizedStringify/colorMap';
+import { ColorTheme, monokaiColors } from './utils/colorizedStringify/colorMap';
 import { fetchReqId } from '../prepareHeaders/prepareHeaders';
+import { ColorizeFn } from './utils/colorizedStringify/colorMap.type';
 
 const hideTheData = (message: unknown, isDataHidden?: boolean) =>
   !isDataHidden ? convertToLoggableType(message) : '[🕵️ data-is-hidden]';
 
-type IColorMap = (isColor: boolean) => Record<string, string>;
-
 export class Logger {
   private options: LoggerOptions = {
     isColor: true,
-    isJson: true,
+    isJson: false,
   };
 
   constructor(private _loggerEngine?: ILogger) {}
@@ -35,6 +29,14 @@ export class Logger {
     this._loggerEngine = value;
     if (options) {
       this.options = options;
+    }
+
+    if (options?.colors) {
+      ColorTheme.colors = options.colors;
+    }
+
+    if (options?.isColor === false) {
+      ColorTheme.isColor = options.isColor;
     }
   }
 
@@ -89,56 +91,46 @@ export class Logger {
 
   empty = (str: string) => str;
 
-  colorTable: Record<string, chalk.Chalk> = this.options.isColor
-    ? {
-        actor: chalk.hex(monokaiColorTheme.Green),
-        action: chalk.hex(monokaiColorTheme.Green),
-        topic: chalk.hex(monokaiColorTheme.Green),
-        requestId: chalk.hex(monokaiColorTheme.Green),
-        data: chalk.hex(monokaiColorTheme.Green),
-        level: chalk.hex(monokaiColorTheme.Green),
-        error: chalk.hex(monokaiColorTheme.Green),
-      }
-    : {
-        actor: this.empty as chalk.Chalk,
-        action: this.empty as chalk.Chalk,
-        topic: this.empty as chalk.Chalk,
-        requestId: this.empty as chalk.Chalk,
-        data: this.empty as chalk.Chalk,
-        level: this.empty as chalk.Chalk,
-        error: this.empty as chalk.Chalk,
-      };
+  colorTable: Record<string, ColorizeFn> = {
+    actor: ColorTheme.colorize(),
+    action: ColorTheme.colorize(),
+    topic: ColorTheme.colorize(),
+    requestId: ColorTheme.colorize(),
+    data: ColorTheme.colorize(),
+    level: ColorTheme.colorize(),
+    error: ColorTheme.colorize(),
+  };
 
   prettifyLog = (communicationLog: CommunicationLog): string => {
     delete communicationLog.isDataHidden;
 
-    const { colorizeKey } = colorMap(this.options.isColor);
-
     return `\n${Object.entries(communicationLog)
       .map(([key, value]) => {
-        const colorizeMethod = this.colorTable[key as CommunicationLogKeys];
         const colorMap: Record<string, string> = {
-          signature: monokaiColorTheme.Green,
-          headers: monokaiColorTheme.Yellow,
-          content: monokaiColorTheme.Orange,
+          signature: monokaiColors.Green,
+          headers: monokaiColors.Yellow,
+          content: monokaiColors.Orange,
         };
 
         if (key === 'data') {
-          return `${colorizeKey(key)}: ${colorizedStringify(
+          return `${ColorTheme.colorize('key')(key)}: ${colorizedStringify(
             value,
             colorMap,
-            1,
-            this.options.isColor
+            1
           )}`;
         }
 
         if (key === 'error') {
-          return `${colorizeKey(key)}: ${
-            (colorizedStringify(value, {}, 1), this.options.isColor)
-          }`;
+          return `${ColorTheme.colorize('key')(key)}: ${colorizedStringify(
+            value,
+            {},
+            1
+          )}`;
         }
 
-        return `${colorizeKey(key)}: ${colorizeMethod(value)}`;
+        return `${ColorTheme.colorize('key')(key)}: ${ColorTheme.colorize()(
+          value as string
+        )}`;
       })
       .join('\n')}\n`;
   };

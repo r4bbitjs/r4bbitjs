@@ -57,6 +57,7 @@ const checkMessagesDispatch = async (url: ConnectionUrl | ConnectionUrl[]) => {
       engine: falseLog,
       options: {
         isJson: false,
+        isColor: true,
       },
     },
   });

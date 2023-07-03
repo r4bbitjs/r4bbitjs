@@ -1,6 +1,7 @@
 import chalk from 'chalk';
+import { ColorKeys, ColorizeFn, Colors } from './colorMap.type';
 
-export const monokaiColorTheme = {
+export const monokaiColors = {
   Background: '#2e2e2e',
   Comments: '#797979',
   White: '#d6d6d6',
@@ -13,16 +14,55 @@ export const monokaiColorTheme = {
   Red: '#FF6188',
 };
 
-const returnWhatTakes = (str: string) => str;
+export const monokaiColorTheme: Colors = {
+  basic: monokaiColors.Green,
+  key: monokaiColors.Blue,
+  string: monokaiColors.Purple,
+  number: monokaiColors.White,
+  boolean: monokaiColors.Background,
+  null: monokaiColors.Pink,
+  undefined: monokaiColors.Pink,
+  array: monokaiColors.Red,
+};
 
-export const colorMap = (isColor = true) => ({
-  colorizeKey: isColor
-    ? chalk.hex(monokaiColorTheme.Blue).italic
-    : returnWhatTakes,
-  colorizeString: chalk.hex(monokaiColorTheme.Purple),
-  colorizeNumber: chalk.hex(monokaiColorTheme.White),
-  colorizeBoolean: chalk.hex(monokaiColorTheme.Background),
-  colorizeNull: chalk.hex(monokaiColorTheme.Pink),
-  colorizeUndefined: chalk.hex(monokaiColorTheme.Pink),
-  colorizeArray: chalk.hex(monokaiColorTheme.Red),
-});
+const returnString = (str: string) => str;
+
+export class ColorTheme {
+  private static _colors: Colors = monokaiColorTheme;
+  private static _isColor = true;
+
+  static set colors(value: Colors) {
+    this._colors = {
+      ...this._colors,
+      ...value,
+    };
+  }
+
+  static colorize(key: ColorKeys = 'basic'): ColorizeFn {
+    const color = this._colors[key] ?? (this._colors['basic'] as string);
+    if (this._isColor) {
+      if (key === 'key') {
+        return chalk.hex(color).italic;
+      }
+      return chalk.hex(color);
+    }
+
+    return returnString;
+  }
+
+  static customColorize(color: string, isItalic: boolean): ColorizeFn {
+    if (this._isColor) {
+      if (isItalic) {
+        return chalk.hex(color).italic;
+      }
+
+      return chalk.hex(color);
+    }
+
+    return returnString;
+  }
+
+  static set isColor(value: boolean) {
+    this._isColor = value;
+  }
+}

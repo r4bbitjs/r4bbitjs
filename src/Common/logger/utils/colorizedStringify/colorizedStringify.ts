@@ -1,15 +1,6 @@
 import { isObject } from '../../../typeGuards/isObject';
 import { isString } from '../../../typeGuards/isString';
-import chalk from 'chalk';
-import { monokaiColorTheme, colorMap } from './colorMap';
-
-const {
-  colorizeBoolean,
-  colorizeNull,
-  colorizeNumber,
-  colorizeString,
-  colorizeArray,
-} = colorMap;
+import { ColorTheme } from './colorMap';
 
 const SEPARATOR = ' ';
 
@@ -19,22 +10,21 @@ export const colorizedStringify = (
   obj: unknown,
   colorMap: Record<string, string> = {},
   level = 0
-  isColor = true,
 ): string => {
   if (typeof obj === 'number') {
-    return colorizeNumber(String(obj));
+    return ColorTheme.colorize('number')(String(obj));
   }
 
   if (isString(obj)) {
-    return colorizeString(obj);
+    return ColorTheme.colorize('string')(obj);
   }
 
   if (typeof obj === 'boolean') {
-    return colorizeBoolean(String(obj));
+    return ColorTheme.colorize('boolean')(String(obj));
   }
 
   if (obj === null) {
-    return colorizeNull('null');
+    return ColorTheme.colorize('null')('null');
   }
 
   if (isObject(obj)) {
@@ -44,9 +34,11 @@ export const colorizedStringify = (
   if (Array.isArray(obj)) {
     const content = obj
       .map((item: unknown) => colorizedStringify(item, colorMap, 0))
-      .join(colorizeArray(', '));
+      .join(ColorTheme.colorize('array')(', '));
 
-    return `${colorizeArray('[')}${content}${colorizeArray(']')}`;
+    return `${ColorTheme.colorize('array')('[')}${content}${ColorTheme.colorize(
+      'array'
+    )(']')}`;
   }
 
   return '';
@@ -64,8 +56,8 @@ const colorizeObject = (
       }
 
       const coloredKey = colorMap['root']
-        ? chalk.hex(colorMap['root']).italic(key)
-        : chalk.hex(monokaiColorTheme.Green).italic(key);
+        ? ColorTheme.customColorize(colorMap['root'], true)(key)
+        : ColorTheme.colorize('key')(key);
 
       return `\n${levelWhiteSpace(level)}${
         coloredKey + ':'

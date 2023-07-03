@@ -1,3 +1,5 @@
+import { Colors } from './utils/colorizedStringify/colorMap.type';
+
 export type ILogger = {
   info: (message: string) => void;
   error: (message: string) => void;
@@ -11,6 +13,7 @@ export type ObjectOrString = object | string;
 export type LoggerOptions = {
   isColor?: boolean;
   isJson?: boolean;
+  colors?: Colors;
 };
 
 export type LogObject = {
