@@ -1,5 +1,5 @@
 {
-  "name": "r4bbit",
+  "name": "@r4bbit/r4bbit",
   "version": "0.0.1",
   "description": "RabbitMQ Wrapper Library For NodeJS",
   "scripts": {
@@ -60,13 +60,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rabbit-wrapper/wrapper.git"
+    "url": "git+https://github.com/r4bbitjs/r4bbit.git"
   },
   "keywords": [
     "rabbitmq"
   ],
   "bugs": {
-    "url": "https://github.com/rabbit-wrapper/wrapper/issues"
+    "url": "https://github.com/r4bbitjs/r4bbit/issues"
   },
-  "homepage": "https://github.com/rabbit-wrapper/wrapper#readme"
+  "homepage": "https://github.com/r4bbitjs/r4bbit#readme"
 }
