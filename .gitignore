@@ -2,8 +2,13 @@
 node_modules
 dist
 
+# jest coverage output
+coverage
+
 # editor config files
 .idea
 
 # npm files, we're using pnpm
 package-lock.json
+
+

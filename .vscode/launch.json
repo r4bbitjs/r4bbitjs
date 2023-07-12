@@ -1,0 +1,14 @@
+{
+    "name": "Attach to Process",
+    "type": "node",
+    "request": "attach",
+    "port": 9229,
+    "localRoot": "${workspaceFolder}/dist",
+    "remoteRoot": "/app/dist/",
+    "outFiles": [
+      "${workspaceFolder}/dist/**/*.js"
+    ],
+    "skipFiles": [
+      "<node_internals>/**/*.js"
+    ]
+}

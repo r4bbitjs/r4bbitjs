@@ -1,10 +1,10 @@
-name: Push Request Workflow
+name: Tests Workflow
 
 on:
-  pull_request:
+  workflow_dispatch:
 
 jobs:
-  test:
+  e2e-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -16,7 +16,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v2.2.4
         with:
-          version: latest
+          version: 7
       - name: Start RabbitMQ
         uses: namoshek/rabbitmq-github-action@v1
         with:
@@ -35,9 +35,8 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      # - name: Run unit tests
-      #   run: pnpm test
-      # - name: Run e2e tests
-      #   run: pnpm e2e:all
+      - run: pnpm install --frozen-lockfile
+      - name: Run e2e tests
+        run: pnpm e2e:all
+      - name: Run unit tests
+        run: pnpm test

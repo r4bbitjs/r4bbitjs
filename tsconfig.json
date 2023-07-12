@@ -1,13 +1,18 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "CommonJS",
     "target": "es2015",
     "declaration": true,
     "outDir": "./dist",
     "skipLibCheck": true,
     "strict": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "e2e/**/*"
   ]
 }
