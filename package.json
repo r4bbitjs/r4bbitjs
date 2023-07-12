@@ -1,9 +1,10 @@
 {
-  "name": "@rabbit-wrapper/wrapper",
+  "name": "r4bbit",
   "version": "0.0.1",
   "description": "RabbitMQ Wrapper Library For NodeJS",
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts",
+    "release": "pnpm run build && changeset publish",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "e2e": "ts-node ./e2e/server-client.e2e.ts",
