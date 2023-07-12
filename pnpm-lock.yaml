@@ -1,4 +1,4 @@
-lockfileVersion: '6.1'
+lockfileVersion: '6.0'
 
 settings:
   autoInstallPeers: true
@@ -32,6 +32,9 @@ dependencies:
   pino-pretty:
     specifier: ^10.0.0
     version: 10.0.0
+  r4bbit:
+    specifier: 'link:'
+    version: 'link:'
   rxjs:
     specifier: ^7.8.1
     version: 7.8.1
