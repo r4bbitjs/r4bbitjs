@@ -1,5 +1,5 @@
 ---
-'@rabbit-wrapper/wrapper': patch
+'@r4bbit/r4bbit': patch
 ---
 
 init
