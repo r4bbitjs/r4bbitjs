@@ -1,5 +1,11 @@
 # r4bbit
 
+## 0.0.4
+
+### Patch Changes
+
+- ffa2f9c: A dummy patch for testing deployment pipeline
+
 ## 0.0.3
 
 ### Patch Changes
