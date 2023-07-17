@@ -31,3 +31,5 @@ Roadmap:
   1- Finish logging
   2- Create an alpha package with ci/cd pipeline
   3 - examples and documentation
+
+test text
