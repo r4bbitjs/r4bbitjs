@@ -13,6 +13,11 @@ describe('e2e tests', () => {
     client = await getClient(localUrl);
   });
 
+  afterAll(async () => {
+    await server.close();
+    await client.close();
+  });
+
   it('should register a basic route and receive a message', async () => {
     const handler: RpcHandler =
       (reply: Reply) => (msg: Record<string, unknown> | string) => {
@@ -69,12 +74,11 @@ describe('e2e tests', () => {
       headers: {
         'x-reply-signature': 'server',
         'x-send-type': 'json',
+        'x-request-id': expect.any(String),
       },
       signature: 'server',
     };
 
     expect(response).toEqual(expectedResponse);
-    await server.close();
-    await client.close();
   });
 });

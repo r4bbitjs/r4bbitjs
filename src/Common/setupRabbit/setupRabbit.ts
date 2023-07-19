@@ -8,7 +8,7 @@ import {
 import { logger as loggerInstance } from '../logger/logger';
 
 export type SetupR4bbitOptions = {
-  logger?: { options?: LoggerOptions; engine: ILogger };
+  logger?: { options?: LoggerOptions; engine?: ILogger };
   requestTracer?: {
     setReqId?: SetReqId;
     getReqId?: GetReqId;
@@ -17,7 +17,7 @@ export type SetupR4bbitOptions = {
 
 export const setupR4bbit = ({ logger, requestTracer }: SetupR4bbitOptions) => {
   if (logger) {
-    setLogger(logger.engine, logger.options);
+    setLogger(logger?.engine, logger.options);
   }
 
   if (requestTracer?.setReqId) {

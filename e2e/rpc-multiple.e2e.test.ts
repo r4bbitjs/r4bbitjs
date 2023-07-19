@@ -69,12 +69,20 @@ describe('rpc-multiple test', () => {
     const expectedResults = [
       {
         content: { content: { message: 'OurMessage' } },
-        headers: { 'x-reply-signature': 'server-2', 'x-send-type': 'json' },
+        headers: {
+          'x-reply-signature': 'server-2',
+          'x-send-type': 'json',
+          'x-request-id': expect.any(String),
+        },
         signature: 'server-2',
       },
       {
         content: { content: { message: 'OurMessage' } },
-        headers: { 'x-reply-signature': 'server-1', 'x-send-type': 'json' },
+        headers: {
+          'x-reply-signature': 'server-1',
+          'x-send-type': 'json',
+          'x-request-id': expect.any(String),
+        },
         signature: 'server-1',
       },
     ];

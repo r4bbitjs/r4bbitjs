@@ -1,8 +1,10 @@
+jest.mock('pino');
 import { initRabbit } from '../Init/init';
 import { InitRabbitOptions } from '../Init/init.type';
 import { ConnectionUrl } from 'amqp-connection-manager';
 import { getClient } from './client';
 import { ConnectionSet } from '../Common/cache/cache';
+import { setupR4bbit } from '../Common/setupRabbit/setupRabbit';
 
 jest.mock('../Init/init', () => ({
   initRabbit: jest.fn(),
@@ -33,6 +35,15 @@ describe('Client tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.resetModules();
+    setupR4bbit({
+      logger: {
+        engine: {
+          info: (str: string) => str,
+          debug: (str: string) => str,
+          error: (str: string) => str,
+        },
+      },
+    });
   });
 
   it('should create a new client as a singleton', async () => {
@@ -69,6 +80,15 @@ describe('RPC tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.resetModules();
+    setupR4bbit({
+      logger: {
+        engine: {
+          info: (str: string) => str,
+          debug: (str: string) => str,
+          error: (str: string) => str,
+        },
+      },
+    });
   });
 
   afterEach(() => {
@@ -78,6 +98,7 @@ describe('RPC tests', () => {
 
   it('should trigger consume method while RPC call', async () => {
     // given
+
     (initRabbit as jest.Mock).mockResolvedValue(channelWrapper);
     let timeout: NodeJS.Timeout;
 
@@ -128,7 +149,7 @@ describe('RPC tests', () => {
         replyQueueName: 'test',
         timeout: 1_000,
       })
-    ).rejects.toEqual('timeout of 1000ms occured for the given rpc message');
+    ).rejects.toEqual('Timeout of 1000ms occured for the given rpc message');
 
     // then
     expect(ConnectionSet.assert).toBeCalled();

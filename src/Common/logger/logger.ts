@@ -1,4 +1,3 @@
-import pino from 'pino';
 import {
   CommunicationLog,
   GenericLog,
@@ -13,6 +12,7 @@ import { colorizedStringify } from './utils/colorizedStringify/colorizedStringif
 import { ColorTheme, monokaiColors } from './utils/colorizedStringify/colorMap';
 import { fetchReqId } from '../prepareHeaders/prepareHeaders';
 import { ColorizeFn } from './utils/colorizedStringify/colorMap.type';
+import pino from 'pino';
 
 const hideTheData = (message: unknown, isDataHidden?: boolean) =>
   !isDataHidden ? convertToLoggableType(message) : '[🕵️ data-is-hidden]';
@@ -42,7 +42,7 @@ export class Logger {
 
   private get logger(): ILogger {
     if (!this._loggerEngine) {
-      this._loggerEngine = this.createDefaultLogger();
+      this._loggerEngine = createDefaultLogger();
     }
 
     return this._loggerEngine;
@@ -134,25 +134,25 @@ export class Logger {
       })
       .join('\n')}\n`;
   };
-
-  private createDefaultLogger(): ILogger {
-    return pino({
-      transport: {
-        target: 'pino-pretty',
-      },
-      options: {
-        colorize: true,
-      },
-      level: 'debug',
-    });
-  }
 }
+
+const createDefaultLogger = (): ILogger => {
+  return pino({
+    transport: {
+      target: 'pino-pretty',
+    },
+    options: {
+      colorize: true,
+    },
+    level: 'debug',
+  });
+};
 
 export const logger = new Logger();
 
 export const setLogger = (
-  clientLogger: ILogger,
+  clientLogger?: ILogger,
   loggerOptions?: LoggerOptions
 ) => {
-  logger.setLogger(clientLogger, loggerOptions);
+  logger.setLogger(clientLogger ?? createDefaultLogger(), loggerOptions);
 };
