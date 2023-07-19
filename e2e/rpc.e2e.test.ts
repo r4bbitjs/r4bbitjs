@@ -60,7 +60,11 @@ describe('rpc e2e tests', () => {
 
     expect(response).toEqual({
       content: { message: 'OurMessage' },
-      headers: { 'x-reply-signature': 'server', 'x-send-type': 'json' },
+      headers: {
+        'x-reply-signature': 'server',
+        'x-send-type': 'json',
+        'x-request-id': expect.any(String),
+      },
       signature: 'server',
     });
   });

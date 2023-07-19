@@ -18,6 +18,7 @@ jest.mock('../Init/init', () => ({
   initRabbit: initRabbitMock,
 }));
 
+import { setupR4bbit } from '../Common/setupRabbit/setupRabbit';
 import { getServer } from './server';
 import { AckHandler, ServerOptions, Handler } from './server.type';
 
@@ -38,6 +39,18 @@ describe('Server tests', () => {
       options
     );
   };
+
+  beforeEach(() => {
+    setupR4bbit({
+      logger: {
+        engine: {
+          info: (str: string) => str,
+          debug: (str: string) => str,
+          error: (str: string) => str,
+        },
+      },
+    });
+  });
 
   it('should call init during server instantiation', async () => {
     // given

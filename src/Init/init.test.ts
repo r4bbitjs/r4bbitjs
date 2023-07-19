@@ -5,6 +5,7 @@ const mockCreateChannel = jest.fn().mockReturnValue({
 });
 const mockConnect = jest.fn().mockReturnValue({
   createChannel: mockCreateChannel,
+  on: jest.fn(),
 });
 
 jest.mock('amqp-connection-manager', () => ({

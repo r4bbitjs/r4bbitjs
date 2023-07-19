@@ -1,5 +1,9 @@
 import { prepareHeaders } from './prepareHeaders';
-import { HEADER_REPLY_SIGNATURE, HEADER_SEND_TYPE } from '../types';
+import {
+  HEADER_REPLY_SIGNATURE,
+  HEADER_REQUEST_ID,
+  HEADER_SEND_TYPE,
+} from '../types';
 import { HEADER_RECEIVE_TYPE } from '../types';
 
 describe('prepareHeaders', () => {
@@ -11,6 +15,7 @@ describe('prepareHeaders', () => {
     const expectedHeaders = {
       [HEADER_SEND_TYPE]: defaultMsgType,
       [HEADER_RECEIVE_TYPE]: defaultMsgType,
+      [HEADER_REQUEST_ID]: expect.any(String),
     };
 
     // when
@@ -28,6 +33,7 @@ describe('prepareHeaders', () => {
     const expectedHeaders = {
       [HEADER_SEND_TYPE]: sendType,
       [HEADER_RECEIVE_TYPE]: receiveType,
+      [HEADER_REQUEST_ID]: expect.any(String),
     };
 
     // when
@@ -42,6 +48,7 @@ describe('prepareHeaders', () => {
     const isServer = true;
     const expectedHeaders = {
       [HEADER_SEND_TYPE]: defaultMsgType,
+      [HEADER_REQUEST_ID]: expect.any(String),
     };
 
     // when
@@ -59,6 +66,7 @@ describe('prepareHeaders', () => {
     const expectedHeaders = {
       [HEADER_REPLY_SIGNATURE]: signature,
       [HEADER_SEND_TYPE]: sendType,
+      [HEADER_REQUEST_ID]: expect.any(String),
     };
 
     // when
