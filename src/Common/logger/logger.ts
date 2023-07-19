@@ -107,7 +107,7 @@ export class Logger {
     return `\n${Object.entries(communicationLog)
       .map(([key, value]) => {
         const colorMap: Record<string, string> = {
-          signature: monokaiColors.Green,
+          signature: monokaiColors.Red,
           headers: monokaiColors.Yellow,
           content: monokaiColors.Orange,
         };

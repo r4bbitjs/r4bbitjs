@@ -103,7 +103,7 @@ export class Client {
     (msg: ConsumeMessage) => {
       extractAndSetReqId(msg.properties.headers);
       logger.communicationLog({
-        data: prepareResponse(msg),
+        data: prepareResponse(msg, options?.responseContains),
         actor: 'Rpc Client',
         action: 'receive',
         topic: routingKey,
@@ -251,7 +251,7 @@ export class Client {
       const clientConsumeFunction = (msg: ConsumeMessage) => {
         const reqId = extractAndSetReqId(msg.properties.headers);
         logger.communicationLog({
-          data: prepareResponse(msg),
+          data: prepareResponse(msg, options?.responseContains),
           actor: 'Rpc Client',
           topic: routingKey,
           isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
