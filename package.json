@@ -8,6 +8,7 @@
     "release": "pnpm run build && changeset publish",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
+    "docs": "typedoc ./src/index.ts",
     "e2e": "ts-node ./e2e/server-client.e2e.ts",
     "e2e:rpc": "ts-node ./e2e/rpc.e2e.ts",
     "e2e:rpc-multiple": "ts-node ./e2e/rpc-multiple.e2e.ts",

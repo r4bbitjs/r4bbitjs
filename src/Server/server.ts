@@ -19,9 +19,34 @@ import { prepareResponse } from '../Common/prepareResponse/prepareResponse';
 import { extractAndSetReqId } from '../Common/RequestTracer/extractAndSetReqId';
 import { logger } from '../Common/logger/logger';
 
+/**
+ * Server class is used to register routes to receive messages
+ * @example
+ * ```ts
+ * const server = await getServer('amqp://localhost');
+ * await server.registerRoute(
+ *  {
+ *    exchangeName: 'exchangeName',
+ *    queueName: 'queueName',
+ *    routingKey: 'routingKey',
+ *  },
+ *  async (message) => {
+ *    console.log(message);
+ *    return 'Hello World';
+ *  },
+ * );
+ * ```
+ */
 export class Server {
   private channelWrapper?: ChannelWrapper;
 
+  /**
+   * Server initializes the connection to RabbitMQ
+   * It is only used internally, users should not use it
+   * @param connectionUrls - connection url or array of connection urls
+   * @param options - options for the server
+   * @returns void
+   */
   public init = async (
     connectionUrls: ConnectionUrl | ConnectionUrl[],
     options?: InitRabbitOptions
@@ -29,6 +54,11 @@ export class Server {
     this.channelWrapper = await initRabbit(connectionUrls, options);
   };
 
+  /**
+   * It returns amqplib-connection-manager's channel wrapper
+   * It is only used internally, users should not use it
+   * @returns ChannelWrapper
+   */
   public getWrapper(): ChannelWrapper {
     if (!this.channelWrapper) {
       throw new Error('You have to trigger init method first');
@@ -37,6 +67,54 @@ export class Server {
     return this.channelWrapper;
   }
 
+  /**
+   * Server registers a route to receive messages
+   * @param connection - connection object
+   * @param handlerFunction - function to handle received message
+   * @param options - options for the server
+   * @returns void
+   * @example
+   * ```ts
+   * const server = await getServer('amqp://localhost');
+   * await server.registerRoute(
+   *  {
+   *   exchangeName: 'exchangeName',
+   *  queueName: 'queueName',
+   * routingKey: 'routingKey',
+   * },
+   * async (message) => {
+   * console.log(message);
+   * return 'Hello World';
+   * },
+   * );
+   * ```
+   * @example
+   * ```ts
+   * const server = await getServer('amqp://localhost');
+   * await server.registerRoute(
+   * {
+   *  exchangeName: 'exchangeName',
+   * queueName: 'queueName',
+   * routingKey: 'routingKey',
+   * },
+   * async (message) => {
+   * console.log(message);
+   * return 'Hello World';
+   * },
+   * {
+   * consumeOptions: {
+   * noAck: true,
+   * },
+   * responseContains: {
+   * signature: false,
+   * },
+   * loggerOptions: {
+   * isDataHidden: false,
+   * },
+   * },
+   * );
+   * ```
+   */
   async registerRoute(
     connection: ServerConnection,
     handlerFunction: Handler | AckHandler,
@@ -119,6 +197,54 @@ export class Server {
     }
   }
 
+  /**
+   * Server registers an RPC route to receive and reply to messages
+   * @param connection - connection object
+   * @param handlerFunction - function to handle received message
+   * @param options - options for the server
+   * @returns void
+   * @example
+   * ```ts
+   * const server = await getServer('amqp://localhost');
+   * await server.registerRPCRoute(
+   * {
+   * exchangeName: 'exchangeName',
+   * queueName: 'queueName',
+   * routingKey: 'routingKey',
+   * },
+   * async (message) => {
+   * console.log(message);
+   * return 'Hello World';
+   * },
+   * );
+   * ```
+   * @example
+   * ```ts
+   * const server = await getServer('amqp://localhost');
+   * await server.registerRPCRoute(
+   * {
+   * exchangeName: 'exchangeName',
+   * queueName: 'queueName',
+   * routingKey: 'routingKey',
+   * },
+   * async (message) => {
+   * console.log(message);
+   * return 'Hello World';
+   * },
+   * {
+   * consumeOptions: {
+   * noAck: true,
+   * },
+   * responseContains: {
+   * signature: false,
+   * },
+   * loggerOptions: {
+   * isDataHidden: false,
+   * },
+   * },
+   * );
+   * ```
+   */
   async registerRPCRoute(
     connection: ServerConnection,
     handlerFunction: RpcHandler,
@@ -242,6 +368,15 @@ export class Server {
     }
   }
 
+  /**
+   * Closes the connection
+   * @returns Promise<void>
+   * @example
+   * ```ts
+   * const server = await getServer('amqp://localhost');
+   * await server.close();
+   * ```
+   */
   async close() {
     logMqClose('Server');
     const channelWrapper = this.getWrapper();
@@ -251,6 +386,16 @@ export class Server {
 }
 
 let server: Server;
+/**
+ * It makes a RabbitMQ connection and returns a singleton Server instance
+ * @param connectionUrls - connection url or array of connection urls
+ * @param options - options for the server
+ * @returns Server
+ * @example
+ * ```ts
+ * const server = await getServer('amqp://localhost');
+ * ```
+ */
 export const getServer = async (
   connectionUrls: ConnectionUrl | ConnectionUrl[],
   options?: InitRabbitOptions

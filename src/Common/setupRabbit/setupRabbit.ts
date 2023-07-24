@@ -15,6 +15,29 @@ export type SetupR4bbitOptions = {
   };
 };
 
+/**
+ * setupR4bbit sets internal options for logging and request tracing.
+ * It has to be called before getServer or getClient
+ * @example
+ * setupR4bbit({
+      logger: {
+        // engine is the user's logger can be winston, pino, etc.
+        engine: {
+          info: logger.info,
+          debug: logger.debug,
+          error: logger.error,
+        },
+        options: {
+          isColor: true,
+          isJson: false,
+          colors: {
+            basic: '#797979',
+            key: '#e5b567,
+            // all colors are optional, if not provided, default colors will be used
+          },
+      },
+    });
+ */
 export const setupR4bbit = ({ logger, requestTracer }: SetupR4bbitOptions) => {
   if (logger) {
     setLogger(logger?.engine, logger.options);

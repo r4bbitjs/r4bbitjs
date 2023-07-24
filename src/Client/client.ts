@@ -26,11 +26,33 @@ import { RequestTracer } from '../Common/RequestTracer/requestTracer';
 
 const DEFAULT_TIMEOUT = 30_000;
 
+/**
+ * Client class is used to publish messages to the RabbitMQ server
+ * @example
+ * ```ts
+ * const client = getClient('amqp://localhost');
+ * await client.publishMessage('Hello World', {
+ *  exchangeName: 'test',
+ *  routingKey: 'test',
+ * });
+ * ```
+ */
 export class Client {
   private _channelWrapper?: ChannelWrapper;
   private eventEmitter = new EventEmitter();
   private messageMap = new Map<string, Subject<unknown>>();
 
+  /**
+   * Initializes the client, used only internally. User's don't have to call this method
+   * @param connectionUrls - Connection url or urls
+   * @param options - Options for the client
+   * @returns Promise<void>
+   * @example
+   * ```ts
+   * const client = new Client();
+   * await client.init('amqp://localhost');
+   * ```
+   */
   public init = async (
     connectionUrls: ConnectionUrl[] | ConnectionUrl,
     options?: InitRabbitOptions
@@ -38,6 +60,11 @@ export class Client {
     this._channelWrapper = await initRabbit(connectionUrls, options);
   };
 
+  /**
+   * It returns amqplib-connection-manager's channel wrapper
+   * It is only used internally, users should not use it
+   * @returns ChannelWrapper
+   */
   get channelWrapper() {
     if (!this._channelWrapper) {
       throw new Error('You have to trigger init method first');
@@ -46,6 +73,31 @@ export class Client {
     return this._channelWrapper;
   }
 
+  /**
+   * Publishes message to the given exchange
+   *
+   * @param message - Message to be published
+   * @param options - Options for the message
+   * @returns Promise<void>
+   * @example
+   * ```ts
+   * const client = await getClient('amqp://localhost');
+   * await client.publishMessage('Hello World', {
+   *  exchangeName: 'test',
+   * routingKey: 'test',
+   * });
+   * ```
+   * @example
+   * ```ts
+   * const client = await getClient('amqp://localhost');
+   * await client.publishMessage('Hello World', {
+   * exchangeName: 'test',
+   * routingKey: 'test',
+   * loggerOptions: {
+   * isDataHidden: true,
+   * },
+   * });
+   */
   public async publishMessage(
     message: Buffer | string | unknown,
     options: ClientOptions
@@ -116,6 +168,29 @@ export class Client {
       );
     };
 
+  /**
+   * Publishes message to the given exchange and waits for the response
+   * @param message - Message to be published
+   * @param options - Options for the message
+   * @returns Promise<ResponseType>
+   * @example
+   * ```ts
+   * const client = await getClient('amqp://localhost');
+   * const response = await client.publishRPCMessage('Hello World', {
+   * exchangeName: 'test',
+   * routingKey: 'test',
+   * });
+   * ```
+   * @example
+   * ```ts
+   * const client = await getClient('amqp://localhost');
+   * const response = await client.publishRPCMessage('Hello World', {
+   * exchangeName: 'test',
+   * routingKey: 'test',
+   * timeout: 1000,
+   * });
+   * ```
+   */
   public async publishRPCMessage<ResponseType>(
     message: Buffer | string | unknown,
     options: ClientRPCOptions
@@ -230,6 +305,42 @@ export class Client {
     this.messageMap.delete(correlationId);
   }
 
+  /**
+   * Publishes message to the given exchange and waits for multiple responses
+   * @param message - Message to be published
+   * @param options - Options for the message
+   * @returns Promise<ResponseType>
+   * @example
+   * ```ts
+   * const client = await getClient('amqp://localhost');
+   * const response = await client.publishRPCMessage('Hello World', {
+   * exchangeName: 'test',
+   * routingKey: 'test',
+   * });
+   * ```
+   * @example
+   * ```ts
+   * const client = await getClient('amqp://localhost');
+   * const response = await client.publishRPCMessage('Hello World', {
+   * exchangeName: 'test',
+   * routingKey: 'test',
+   * timeout: 1000,
+   * });
+   * ```
+   * @example
+   * ```ts
+   * const client = await getClient('amqp://localhost');
+   * const response = await client.publishRPCMessage('Hello World', {
+   * exchangeName: 'test',
+   * routingKey: 'test',
+   * timeout: 1000,
+   * waitedReplies: 2,
+   * handler: (data) => {
+   * console.log(data);
+   * },
+   * });
+   * ```
+   */
   public async publishMultipleRPC(
     message: Buffer | string | unknown,
     options: ClientMultipleRPC
@@ -360,6 +471,15 @@ export class Client {
     });
   }
 
+  /**
+   * Closes the connection
+   * @returns Promise<void>
+   * @example
+   * ```ts
+   * const client = await getClient('amqp://localhost');
+   * await client.close();
+   * ```
+   */
   public async close() {
     logMqClose('Client');
     await this.channelWrapper.cancelAll();
@@ -368,6 +488,16 @@ export class Client {
 }
 
 let client: Client;
+/**
+ * It makes a RabbitMQ connection and returns a singleton Client instance
+ * @param connectionUrls - Connection url or urls
+ * @param options - Options for the client
+ * @returns Promise<Client>
+ * @example
+ * ```ts
+ * const client = await getClient('amqp://localhost');
+ * ```
+ */
 export const getClient = async (
   connectionUrls: ConnectionUrl | ConnectionUrl[],
   options?: InitRabbitOptions
