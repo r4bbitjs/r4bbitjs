@@ -1,3 +1,4 @@
+import { setupR4bbit } from '../src';
 import { getClient } from '../src/Client/client';
 import { getServer } from '../src/Server/server';
 import { Reply, RpcHandler } from '../src/Server/server.type';
@@ -7,7 +8,15 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
 
 describe('rpc unknown replies tests', () => {
   beforeAll(() => {
-    jest.setTimeout(5_000);
+    setupR4bbit({
+      logger: {
+        engine: {
+          info: (str: string) => str,
+          debug: (str: string) => str,
+          error: (str: string) => str,
+        },
+      },
+    });
   });
 
   it('should send multiple rpc requests and receive multiple replies', async () => {

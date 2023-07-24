@@ -2,6 +2,7 @@ import { getServer, Server } from '../src/Server/server';
 import { Reply, RpcHandler } from '../src/Server/server.type';
 import { getClient, Client } from '../src/Client/client';
 import path from 'path';
+import { setupR4bbit } from '../src';
 
 describe('e2e tests', () => {
   const localUrl = 'amqp://guest:guest@localhost:5672/';
@@ -9,6 +10,15 @@ describe('e2e tests', () => {
   let client: Client;
 
   beforeAll(async () => {
+    setupR4bbit({
+      logger: {
+        engine: {
+          info: (str: string) => str,
+          debug: (str: string) => str,
+          error: (str: string) => str,
+        },
+      },
+    });
     server = await getServer(localUrl);
     client = await getClient(localUrl);
   });

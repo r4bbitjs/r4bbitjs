@@ -1,3 +1,4 @@
+import { setupR4bbit } from '../src';
 import { getClient } from '../src/Client/client';
 import { getServer } from '../src/Server/server';
 import { Reply, RpcHandler } from '../src/Server/server.type';
@@ -8,6 +9,17 @@ const localUrl = 'amqp://guest:guest@localhost:5672/';
 const getRandomIntegral = () => Math.floor(Math.random() * 100);
 
 describe('rpc-multiple test', () => {
+  beforeAll(() => {
+    setupR4bbit({
+      logger: {
+        engine: {
+          info: (str: string) => str,
+          debug: (str: string) => str,
+          error: (str: string) => str,
+        },
+      },
+    });
+  });
   it('should handle multiple replays and return array of responses', async () => {
     const server = await getServer(localUrl);
     const client = await getClient(localUrl);

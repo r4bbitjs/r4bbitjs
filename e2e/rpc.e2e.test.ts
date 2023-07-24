@@ -1,3 +1,4 @@
+import { setupR4bbit } from '../src';
 import { getClient } from '../src/Client/client';
 import { getServer } from '../src/Server/server';
 import { Reply, RpcHandler } from '../src/Server/server.type';
@@ -5,6 +6,18 @@ import path from 'path';
 
 describe('rpc e2e tests', () => {
   const localUrl = 'amqp://guest:guest@localhost:5672/';
+
+  beforeAll(() => {
+    setupR4bbit({
+      logger: {
+        engine: {
+          info: (str: string) => str,
+          debug: (str: string) => str,
+          error: (str: string) => str,
+        },
+      },
+    });
+  });
 
   it('should register a basic route and receive a message', async () => {
     const server = await getServer(localUrl);
