@@ -1,5 +1,5 @@
 import { Options } from 'amqp-connection-manager';
-import { MessageType } from '../Common/types';
+import { MessageType, ResponseContains } from '../Common/types';
 import { ServerResponseContains } from '../Common/types';
 
 export type Handler = (msg: string | Record<string, unknown>) => void;
@@ -42,7 +42,7 @@ export type ServerRPCOptions = {
   sendType?: MessageType;
   correlationId?: string;
   replySignature?: string;
-  responseContains?: ServerResponseContains;
+  responseContains?: ResponseContains;
   loggerOptions?: {
     isSendDataHidden?: boolean;
     isConsumeDataHidden?: boolean;
