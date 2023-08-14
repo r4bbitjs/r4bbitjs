@@ -1,42 +1,78 @@
 import { getServer, getClient, ServerTypes } from '@r4bbit/r4bbit';
 
 const main = async () => {
-  const server = await getServer('amqp://guest:guest@localhost:5672/');
-  const client = await getClient('amqp://guest:guest@localhost:5672/');
+  const server = await getServer(
+    ['amqp://guest:guest@localhost:5672/', 'amqp://fallback@localhost:5672/'],
+    {
+      connectOptions: {
+        // optional (both connectOptions and all its options)
+        reconnectTimeInSeconds: 10,
+        heartbeatIntervalInSeconds: 10,
+        // ...
+      },
+      createChannelOptions: {
+        // optional (both createChannelOptions and all its options)
+        name: 'my-channel-name',
+        // ...
+      },
+    }
+  );
+
+  const client = await getClient(
+    ['amqp://guest:guest@localhost:5672/', 'amqp://fallback@localhost:5672/'],
+    {
+      connectOptions: {
+        // optional (both connectOptions and all its options)
+        reconnectTimeInSeconds: 10,
+        heartbeatIntervalInSeconds: 10,
+        // ...
+      },
+      createChannelOptions: {
+        // optional (both createChannelOptions and all its options)
+        name: 'my-channel-name',
+        // ...
+      },
+    }
+  );
 
   const handlerFunc: ServerTypes.AckHandler =
     ({ ack }) =>
     (msg: string | object) => {
-      if (!msg) return;
-      if (!ack) return;
-
-      try {
-        ack();
-      } catch (error) {
-        console.log('error', error);
-      }
+      ack();
+      console.log('Received message is ->', msg);
     };
 
   // create a server with one route
   await server.registerRoute(
     {
-      queueName: 'simple-test-queue',
-      exchangeName: 'simple-test-exchange',
-      routingKey: 'simple-test-routing-key',
+      queueName: 'my-queue',
+      exchangeName: 'my-exchange',
+      routingKey: 'my.*',
     },
     handlerFunc,
     {
-      consumeOptions: { noAck: false },
-      responseContains: { content: true, headers: true },
+      consumeOptions: {
+        noAck: false, // default is true
+      },
+      loggerOptions: {
+        isDataHidden: true, // default is false
+      },
+      responseContains: {
+        content: true, // default is true
+        headers: true, // default is false
+      },
     }
   );
 
   await client.publishMessage(
-    { content: 'simple-test content' },
+    { content: 'hello world!!!' },
     {
-      exchangeName: 'simple-test-exchange',
-      routingKey: 'simple-test-routing-key',
-      sendType: 'json',
+      exchangeName: 'my-exchange',
+      routingKey: 'my.routing-key',
+      loggerOptions: {
+        isDataHidden: false, // default is true,
+      },
+      sendType: 'json', // default is 'json'
     }
   );
 };
