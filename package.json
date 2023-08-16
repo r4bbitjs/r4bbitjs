@@ -1,6 +1,6 @@
 {
   "name": "@r4bbit/r4bbit",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "RabbitMQ Wrapper Library For NodeJS",
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts",
@@ -54,7 +54,6 @@
     "nodemon": "^2.0.22",
     "pino": "^8.14.1",
     "pino-pretty": "^10.0.0",
-    "r4bbit": "link:",
     "rxjs": "^7.8.1",
     "uuid": "^9.0.0",
     "zod": "^3.21.4"
