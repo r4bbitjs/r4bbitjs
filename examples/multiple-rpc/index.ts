@@ -5,24 +5,17 @@ const main = async () => {
   const client = await getClient('amqp://guest:guest@localhost:5672/');
 
   const handler: ServerTypes.RpcHandler =
-    (reply: ServerTypes.Reply) => (msg: Record<string, unknown> | string) => {
-      if (!msg) {
-        return;
-      }
+    (reply) => (msg: Record<string, unknown> | string) => {
       reply(msg);
     };
 
-  const exchangeName = 'rpc-multiple-exchange';
   const objectMessage = { message: 'OurMessage' };
-  const routingKey = 'rpc-multiple.routing-key';
-  const serverQueueName = 'rpc-multiple-queue';
-  const replyQueueName = 'rpc-multiple-reply-queue';
 
   await server.registerRPCRoute(
     {
-      queueName: serverQueueName,
-      routingKey,
-      exchangeName,
+      queueName: 'queue-1',
+      routingKey: 'my.*',
+      exchangeName: 'test-exchange',
     },
     handler,
     {
@@ -32,9 +25,9 @@ const main = async () => {
 
   await server.registerRPCRoute(
     {
-      queueName: 'complete-different-queue',
-      routingKey,
-      exchangeName,
+      queueName: 'queue-2',
+      routingKey: '*.routing-key',
+      exchangeName: 'test-exchange',
     },
     handler,
     {
@@ -43,9 +36,9 @@ const main = async () => {
   );
 
   await client.publishMultipleRPC(objectMessage, {
-    exchangeName,
-    routingKey,
-    replyQueueName,
+    exchangeName: 'test-exchange',
+    routingKey: 'my.routing-key',
+    replyQueueName: 'multiple-rpc-client-reply-queue',
     timeout: 5_000,
     waitedReplies: 2,
     responseContains: {
@@ -53,6 +46,15 @@ const main = async () => {
       headers: true,
       signature: true,
     },
+    correlationId: 'some-random-nanoid', // optional r4bbit provides a default random value,
+    loggerOptions: {
+      // optional
+      isConsumeDataHidden: false,
+      isSendDataHidden: false,
+    },
+    sendType: 'json', // optional default is 'json',
+    receiveType: 'json', // optional default is 'json',
+    replySignature: 'server-1', // optional,
   });
 };
 
