@@ -4,7 +4,7 @@ const main = async () => {
   const server = await getServer('amqp://guest:guest@localhost:5672/');
   const client = await getClient('amqp://guest:guest@localhost:5672/');
 
-  const handler: ServerTypes.RpcHandler =
+  const handler =
     (reply: ServerTypes.Reply) => (msg: Record<string, unknown> | string) => {
       if (!msg) {
         return;
@@ -12,39 +12,45 @@ const main = async () => {
       reply((msg as { content: string }).content);
     };
 
-  const exchangeName = 'simple-rpc-exchange';
-  const objectMessage = { message: 'OurMessage', nested: { value: 15 } };
-  const routingKey = 'simple-rpc.routing-key';
-  const serverQueueName = 'simple-rpc-queue';
-  const replyQueueName = 'simple-rpc-reply';
-
   await server.registerRPCRoute(
     {
-      queueName: serverQueueName,
-      routingKey: '*.routing-key',
-      exchangeName,
+      queueName: 'my-queue',
+      exchangeName: 'my-exchange',
+      routingKey: 'my.*',
     },
     handler,
     {
       replySignature: 'rpc-server-signature',
+      consumeOptions: {
+        // optional
+        noAck: false, // default is true
+      },
+      loggerOptions: {
+        // optional
+        isConsumeDataHidden: true, // default is false
+        isSendDataHidden: true, // default is false
+      },
       responseContains: {
-        content: true,
-        headers: true,
+        content: true, // default is true
+        headers: true, // default is false
       },
     }
   );
 
-  await client.publishRPCMessage<typeof objectMessage>(objectMessage, {
-    exchangeName,
-    routingKey,
-    replyQueueName,
-    timeout: 5_000,
-    responseContains: {
-      content: true,
-      headers: true,
-      signature: true,
-    },
-  });
+  await client.publishRPCMessage(
+    { message: 'OurMessage', nested: { value: 15 } },
+    {
+      exchangeName: 'my-exchange',
+      routingKey: 'my.routing-key',
+      replyQueueName: 'simple-rpc-reply',
+      timeout: 5_000,
+      responseContains: {
+        content: true,
+        headers: true,
+        signature: true,
+      },
+    }
+  );
 };
 
 main();
