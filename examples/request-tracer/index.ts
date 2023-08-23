@@ -1,6 +1,17 @@
-import { getServer, getClient, ServerTypes } from '@r4bbit/r4bbit';
+import { getServer, getClient, ServerTypes, setupR4bbit } from '@r4bbit/r4bbit';
 
 const main = async () => {
+  let testReqId = 'test-req-id';
+
+  setupR4bbit({
+    requestTracer: {
+      getReqId: () => testReqId,
+      setReqId: (reqId) => {
+        testReqId = reqId;
+      },
+    },
+  });
+
   const server = await getServer('amqp://guest:guest@localhost:5672/');
   const client = await getClient('amqp://guest:guest@localhost:5672/');
 
