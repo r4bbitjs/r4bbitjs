@@ -2,7 +2,7 @@
 ![Last publish badge](https://github.com/r4bbitjs/r4bbitjs/actions/workflows/publish.yml/badge.svg)
 
 <p align="center" >
-  <img src="https://raw.githubusercontent.com/r4bbitjs/r4bbitjs/dev/logo/r4bbit_logo.svg" alt="r4bbit's logo" width="300" />
+  <img src="https://raw.githubusercontent.com/r4bbitjs/r4bbitjs/dev/logo/logo-no-background.png" alt="r4bbit's logo" width="600" />
 </p>
 
 # r4bbit
