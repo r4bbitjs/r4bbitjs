@@ -1,5 +1,5 @@
 {
-  "name": "r4bbitjs",
+  "name": "r4bbit",
   "version": "1.0.0",
   "description": "RabbitMQ Wrapper Library For NodeJS",
   "scripts": {
