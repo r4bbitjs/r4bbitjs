@@ -1,10 +1,15 @@
-[![CI][badge-ci-img]][badge-ci-url]
+![Tests badge](https://github.com/r4bbitjs/r4bbitjs/actions/workflows/e2e.yml/badge.svg)
+![Last publish badge](https://github.com/r4bbitjs/r4bbitjs/actions/workflows/publish.yml/badge.svg)
 
-# R4bbit
+<p align="center" >
+  <img src="https://raw.githubusercontent.com/r4bbitjs/r4bbitjs/dev/logo/r4bbit_logo.svg" alt="r4bbit's logo" width="300" />
+</p>
+
+# r4bbit
 
 ## Introduction
 
-ThisR4bbit library is a simplified abstraction library for working with RabbitMQ in TypeScript. The purpose of this library is to streamline the process of sending and receiving messages from a RabbitMQ server.
+r4bbit library is a simplified abstraction library for working with RabbitMQ in TypeScript. The purpose of this library is to streamline the process of sending and receiving messages from a RabbitMQ server.
 
 ## Features
 
@@ -21,6 +26,4 @@ ThisR4bbit library is a simplified abstraction library for working with RabbitMQ
 
 ## Installation
 
-```bash
-npm install r4bbit
-```
+To install the R4bbit run the following command: ``
