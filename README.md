@@ -7,7 +7,7 @@
 
 # r4bbit
 
-r4bbitjs is the best way to use RabbitMQ in TypeScript. It is a simple abstraction library that allows you to send and receive messages from a RabbitMQ server with ease.
+r4bbit is the best way to use RabbitMQ in TypeScript. It is a simple abstraction library that allows you to send and receive messages from a RabbitMQ server with ease.
 
 ## Why you should use r4bbitjs
 
@@ -20,4 +20,4 @@ r4bbitjs is the best way to use RabbitMQ in TypeScript. It is a simple abstracti
 
 ## Documentation and API reference
 
-You can find the documentation and API reference in [r4bbit.io](www.r4bbit.io/).
+You can find the documentation and API reference in (r4bbit.io)[http://r4bbit.io/]
