@@ -1,4 +1,4 @@
-import { getServer, getClient, ServerTypes } from '@r4bbit/r4bbit';
+import { getServer, getClient, ServerTypes } from 'r4bbit';
 
 const main = async () => {
   const server = await getServer(

@@ -35,6 +35,7 @@ describe('init function tests', () => {
       'amqp://guest:guest@localhost:5672/',
       'amqp://user:pass@host:10000/vhost',
       'amqp://user%61:%61pass@ho%61st:10000/v%2fhost',
+      'amqp://fallback@localhost:5672/',
     ];
 
     correctUrls.forEach((uri) => {

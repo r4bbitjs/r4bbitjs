@@ -11,17 +11,7 @@ export const initRabbit = async (
   connectionUrls: ConnectionUrl[] | ConnectionUrl,
   options?: InitRabbitOptions
 ): Promise<ChannelWrapper> => {
-  try {
-    await validateUri(connectionUrls);
-  } catch (err: unknown) {
-    const errorMsg =
-      'Entered uri is not in valid amqp uri format, please check https://www.rabbitmq.com/uri-spec.html' +
-      ' ' +
-      JSON.stringify(err);
-
-    logger.error(errorMsg);
-    throw new Error(errorMsg);
-  }
+  await validateUri(connectionUrls);
 
   try {
     const connection = amqp.connect(connectionUrls, options?.connectOptions);
