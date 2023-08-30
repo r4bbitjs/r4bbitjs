@@ -1,6 +1,6 @@
 {
   "name": "r4bbit",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "RabbitMQ Wrapper Library For NodeJS",
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts",
