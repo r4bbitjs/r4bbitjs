@@ -1,5 +1,6 @@
 import { ConnectionUrl, Options } from 'amqp-connection-manager';
 import { rabbitUriSchema } from './schema/url.schema';
+import { logger } from '../Common/logger/logger';
 
 const isString = (value: unknown): value is string => {
   return typeof value === 'string';
@@ -61,7 +62,21 @@ const getUrlFlatList = (connectionUrls: ConnectionUrl[] | ConnectionUrl) => {
 export const validateUri = async (
   connectionUrls: ConnectionUrl[] | ConnectionUrl
 ) => {
-  for (const url of getUrlFlatList(connectionUrls)) {
-    await rabbitUriSchema.parseAsync(url);
+  const invalidUrls = [];
+
+  for await (const url of getUrlFlatList(connectionUrls)) {
+    try {
+      await rabbitUriSchema.parseAsync(url);
+    } catch {
+      invalidUrls.push(url);
+    }
+  }
+
+  if (invalidUrls.length > 0) {
+    const errorMsg =
+      'One or more RabbitMQ URIs are not valid -> ' + invalidUrls.join(', ');
+
+    logger.error(errorMsg);
+    throw new Error(errorMsg);
   }
 };

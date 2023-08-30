@@ -11,7 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@r4bbit/r4bbit": "^0.0.4",
+    "r4bbit": "^1.0.2",
     "ts-node": "^10.9.1",
     "tsup": "^7.1.0"
   }

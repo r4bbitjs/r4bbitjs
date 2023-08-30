@@ -1,4 +1,4 @@
-import { getServer, getClient, ServerTypes, setupR4bbit } from '@r4bbit/r4bbit';
+import { getServer, getClient, ServerTypes, setupR4bbit } from 'r4bbit';
 
 const main = async () => {
   let testReqId = 'test-req-id';
