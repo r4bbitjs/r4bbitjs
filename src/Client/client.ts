@@ -238,7 +238,9 @@ export class Client {
     options: ClientMultipleRPC
   ) {
     const { exchangeName, replyQueueName, routingKey } = options;
-    const prefixedReplyQueueName = `reply.${replyQueueName}`;
+    const prefixedReplyQueueName = `reply.${replyQueueName}.${String(
+      nanoidSync()
+    )}}`;
 
     const createdReqId = fetchReqId();
     const requestTracer = RequestTracer.getInstance();
