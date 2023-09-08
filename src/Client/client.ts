@@ -2,6 +2,7 @@ import { ChannelWrapper, ConnectionUrl } from 'amqp-connection-manager';
 import { ConsumeMessage } from 'amqplib';
 import { EventEmitter } from 'events';
 import { nanoid } from 'nanoid/async';
+import { nanoid as nanoidSync } from 'nanoid';
 import { encodeMessage } from '../Common/encodeMessage/encodeMessage';
 import { prepareResponse } from '../Common/prepareResponse/prepareResponse';
 import { initRabbit } from '../Init/init';
@@ -121,7 +122,9 @@ export class Client {
     options: ClientRPCOptions
   ): Promise<ResponseType> {
     const { exchangeName, replyQueueName, routingKey } = options;
-    const prefixedReplyQueueName = `reply.${replyQueueName}`;
+    const prefixedReplyQueueName = `reply.${replyQueueName}.${String(
+      nanoidSync()
+    )}`;
     const createdReqId = fetchReqId();
     const requestTracer = RequestTracer.getInstance();
     requestTracer.setRequestId && requestTracer.setRequestId(createdReqId);

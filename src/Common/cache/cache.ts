@@ -50,7 +50,10 @@ export class ConnectionSet {
       await channelWrapper.assertExchange(exchange, 'topic');
 
       if (queue) {
-        await channelWrapper.assertQueue(queue);
+        await channelWrapper.assertQueue(queue, {
+          exclusive: true,
+          autoDelete: true,
+        });
         await channelWrapper.bindQueue(queue, exchange, routingKey);
       }
     } catch (err: unknown) {
