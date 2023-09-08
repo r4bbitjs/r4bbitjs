@@ -11,4 +11,10 @@ coverage
 # npm files, we're using pnpm
 package-lock.json
 
+# IDE settings
+.vscode
+
+# OS generated files
+.DS_Store
+
 
