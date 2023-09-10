@@ -2,6 +2,7 @@ import { ChannelWrapper, ConnectionUrl } from 'amqp-connection-manager';
 import { ConsumeMessage } from 'amqplib';
 import { EventEmitter } from 'events';
 import { nanoid } from 'nanoid/async';
+import { nanoid as nanoidSync } from 'nanoid';
 import { encodeMessage } from '../Common/encodeMessage/encodeMessage';
 import { prepareResponse } from '../Common/prepareResponse/prepareResponse';
 import { initRabbit } from '../Init/init';
@@ -30,6 +31,7 @@ export class Client {
   private _channelWrapper?: ChannelWrapper;
   private eventEmitter = new EventEmitter();
   private messageMap = new Map<string, Subject<unknown>>();
+  private replyQueueId: string = nanoidSync();
 
   public init = async (
     connectionUrls: ConnectionUrl[] | ConnectionUrl,
@@ -121,7 +123,7 @@ export class Client {
     options: ClientRPCOptions
   ): Promise<ResponseType> {
     const { exchangeName, replyQueueName, routingKey } = options;
-    const prefixedReplyQueueName = `reply.${replyQueueName}`;
+    const prefixedReplyQueueName = `reply.${replyQueueName}.${this.replyQueueId}`;
     const createdReqId = fetchReqId();
     const requestTracer = RequestTracer.getInstance();
     requestTracer.setRequestId && requestTracer.setRequestId(createdReqId);
@@ -130,7 +132,8 @@ export class Client {
       this.channelWrapper,
       exchangeName,
       prefixedReplyQueueName,
-      prefixedReplyQueueName
+      prefixedReplyQueueName,
+      true
     );
 
     try {
@@ -235,7 +238,7 @@ export class Client {
     options: ClientMultipleRPC
   ) {
     const { exchangeName, replyQueueName, routingKey } = options;
-    const prefixedReplyQueueName = `reply.${replyQueueName}`;
+    const prefixedReplyQueueName = `reply.${replyQueueName}.${this.replyQueueId}`;
 
     const createdReqId = fetchReqId();
     const requestTracer = RequestTracer.getInstance();
@@ -304,7 +307,8 @@ export class Client {
         this.channelWrapper,
         exchangeName,
         prefixedReplyQueueName,
-        prefixedReplyQueueName
+        prefixedReplyQueueName,
+        true
       );
 
       await this.channelWrapper.consume(

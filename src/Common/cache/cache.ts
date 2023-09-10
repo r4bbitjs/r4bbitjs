@@ -40,7 +40,8 @@ export class ConnectionSet {
     channelWrapper: ChannelWrapper,
     exchange: string,
     queue = '',
-    routingKey = ''
+    routingKey = '',
+    isReplyQueue = false
   ): Promise<void> => {
     if (this.isCacheHit(exchange, queue, routingKey)) {
       return;
@@ -50,7 +51,14 @@ export class ConnectionSet {
       await channelWrapper.assertExchange(exchange, 'topic');
 
       if (queue) {
-        await channelWrapper.assertQueue(queue);
+        if (isReplyQueue) {
+          await channelWrapper.assertQueue(queue, {
+            exclusive: true,
+            autoDelete: true,
+          });
+        } else {
+          await channelWrapper.assertQueue(queue);
+        }
         await channelWrapper.bindQueue(queue, exchange, routingKey);
       }
     } catch (err: unknown) {
