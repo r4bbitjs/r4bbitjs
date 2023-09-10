@@ -1,0 +1,19 @@
+{
+  "name": "r4bbit-concurrent-client-example",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsup index.ts --format cjs,esm --dts",
+    "start": "ts-node client.ts",
+    "start-server": "ts-node server.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "r4bbit": "^1.0.2",
+    "ts-node": "^10.9.1",
+    "tsup": "^7.1.0"
+  }
+}
