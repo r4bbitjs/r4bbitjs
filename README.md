@@ -20,4 +20,4 @@ r4bbit is the best way to use RabbitMQ in TypeScript. It is a simple abstraction
 
 ## Documentation and API reference
 
-You can find the documentation and API reference in (r4bbit.io)[https://r4bbit.io/
+You can find the documentation and API reference in [r4bbit.io](https://r4bbit.io/)
