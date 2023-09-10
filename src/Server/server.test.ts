@@ -81,7 +81,8 @@ describe('Server tests', () => {
       channelWrapper,
       exchangeName,
       queueName,
-      routingKey
+      routingKey,
+      false
     );
   });
 
