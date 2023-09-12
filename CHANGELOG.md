@@ -1,5 +1,15 @@
 # r4bbit
 
+## 1.0.6
+
+### Patch Changes
+
+- f692e9f: Exported Client and Server Types
+- f692e9f: README update
+- f692e9f: Multiple clients were using the same queue, now every client has its own uniqueue one
+- f692e9f: Examples updated and uri validation logic fixed
+- f692e9f: removed r4bbit as a dependency
+
 ## 1.0.5
 
 ### Patch Changes
