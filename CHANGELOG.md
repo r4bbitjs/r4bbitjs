@@ -1,5 +1,17 @@
 # r4bbit
 
+## 1.0.5
+
+### Patch Changes
+
+- ee1cf42: README update
+- ee1cf42: Multiple clients were using the same queue, now every client has its own uniqueue one
+- ee1cf42: Examples updated and uri validation logic fixed
+- Updated dependencies [ee1cf42]
+- Updated dependencies [ee1cf42]
+- Updated dependencies [ee1cf42]
+  - r4bbit@1.0.5
+
 ## 1.0.4
 
 ### Patch Changes
