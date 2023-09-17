@@ -1,5 +1,6 @@
 import { IAmqpConnectionManager } from 'amqp-connection-manager/dist/esm/AmqpConnectionManager';
 import { logger } from '../logger/logger';
+import { client, isClientExists } from '../../Client/client';
 
 export const listenSignals = (connection: IAmqpConnectionManager): void => {
   listenSystemSignals();
@@ -42,5 +43,9 @@ const listenConnectionSignals = (connection: IAmqpConnectionManager): void => {
 };
 
 const graceful = () => {
-  process.exit(-1);
+  if (isClientExists()) {
+    client.close().then(() => {
+      process.exit(-1);
+    });
+  }
 };

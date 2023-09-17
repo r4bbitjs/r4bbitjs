@@ -32,6 +32,8 @@ export class Client {
   private eventEmitter = new EventEmitter();
   private messageMap = new Map<string, Subject<unknown>>();
   private replyQueueId: string = nanoidSync();
+  private replyRPCQueueName = '';
+  private replyMultipleRPCQueueName = '';
 
   public init = async (
     connectionUrls: ConnectionUrl[] | ConnectionUrl,
@@ -123,7 +125,7 @@ export class Client {
     options: ClientRPCOptions
   ): Promise<ResponseType> {
     const { exchangeName, replyQueueName, routingKey } = options;
-    const prefixedReplyQueueName = `reply.${replyQueueName}.${this.replyQueueId}`;
+    this.replyRPCQueueName = `reply.${replyQueueName}.${this.replyQueueId}`;
     const createdReqId = fetchReqId();
     const requestTracer = RequestTracer.getInstance();
     requestTracer.setRequestId && requestTracer.setRequestId(createdReqId);
@@ -131,14 +133,13 @@ export class Client {
     await ConnectionSet.assert(
       this.channelWrapper,
       exchangeName,
-      prefixedReplyQueueName,
-      prefixedReplyQueueName,
-      true
+      this.replyRPCQueueName,
+      this.replyRPCQueueName
     );
 
     try {
       await this.channelWrapper.consume(
-        prefixedReplyQueueName,
+        this.replyRPCQueueName,
         this.clientConsumeFunction(routingKey, options),
         {
           ...options?.consumeOptions,
@@ -210,7 +211,7 @@ export class Client {
             requestId: createdReqId,
           }),
           ...options?.publishOptions,
-          replyTo: prefixedReplyQueueName,
+          replyTo: this.replyRPCQueueName,
           correlationId: corelationId,
         }
       );
@@ -238,7 +239,7 @@ export class Client {
     options: ClientMultipleRPC
   ) {
     const { exchangeName, replyQueueName, routingKey } = options;
-    const prefixedReplyQueueName = `reply.${replyQueueName}.${this.replyQueueId}`;
+    this.replyMultipleRPCQueueName = `reply.${replyQueueName}.${this.replyQueueId}`;
 
     const createdReqId = fetchReqId();
     const requestTracer = RequestTracer.getInstance();
@@ -306,13 +307,12 @@ export class Client {
       await ConnectionSet.assert(
         this.channelWrapper,
         exchangeName,
-        prefixedReplyQueueName,
-        prefixedReplyQueueName,
-        true
+        this.replyMultipleRPCQueueName,
+        this.replyMultipleRPCQueueName
       );
 
       await this.channelWrapper.consume(
-        prefixedReplyQueueName,
+        this.replyMultipleRPCQueueName,
         clientConsumeFunction,
         {
           ...options?.consumeOptions,
@@ -341,7 +341,7 @@ export class Client {
             requestId: createdReqId,
           }),
           ...options?.publishOptions,
-          replyTo: prefixedReplyQueueName,
+          replyTo: this.replyMultipleRPCQueueName,
           correlationId: corelationId,
         }
       );
@@ -364,14 +364,29 @@ export class Client {
     });
   }
 
+  private deleteReplyQueues = async () => {
+    if (this.replyRPCQueueName) {
+      logger.debug(`Deleting rpc reply queue ${this.replyRPCQueueName}`);
+      await this.channelWrapper.deleteQueue(this.replyRPCQueueName);
+    }
+
+    if (this.replyMultipleRPCQueueName) {
+      logger.debug(
+        `Deleting multiple rpc reply queue ${this.replyRPCQueueName}`
+      );
+      await this.channelWrapper.deleteQueue(this.replyMultipleRPCQueueName);
+    }
+  };
+
   public async close() {
     logMqClose('Client');
+    await this.deleteReplyQueues();
     await this.channelWrapper.cancelAll();
     await this.channelWrapper.close();
   }
 }
 
-let client: Client;
+export let client: Client;
 export const getClient = async (
   connectionUrls: ConnectionUrl | ConnectionUrl[],
   options?: InitRabbitOptions
@@ -383,3 +398,5 @@ export const getClient = async (
 
   return client;
 };
+
+export const isClientExists = () => !!client;
