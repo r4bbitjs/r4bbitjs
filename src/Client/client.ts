@@ -132,8 +132,7 @@ export class Client {
       this.channelWrapper,
       exchangeName,
       prefixedReplyQueueName,
-      prefixedReplyQueueName,
-      true
+      prefixedReplyQueueName
     );
 
     try {
@@ -307,8 +306,7 @@ export class Client {
         this.channelWrapper,
         exchangeName,
         prefixedReplyQueueName,
-        prefixedReplyQueueName,
-        true
+        prefixedReplyQueueName
       );
 
       await this.channelWrapper.consume(

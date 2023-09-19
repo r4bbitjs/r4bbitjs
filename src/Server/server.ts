@@ -64,8 +64,7 @@ export class Server {
         this.channelWrapper,
         exchangeName,
         queueName,
-        routingKey,
-        false
+        routingKey
       );
 
       await this.channelWrapper.consume(
@@ -197,8 +196,7 @@ export class Server {
       this.channelWrapper,
       exchangeName,
       queueName,
-      routingKey,
-      false
+      routingKey
     );
 
     try {
