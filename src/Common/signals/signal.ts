@@ -1,5 +1,10 @@
 import { IAmqpConnectionManager } from 'amqp-connection-manager/dist/esm/AmqpConnectionManager';
 import { logger } from '../logger/logger';
+import { ConnectionManager } from '../connectionManager/connectionManager';
+import amqp from 'amqp-connection-manager';
+
+let connectionBouncer = true;
+let initialConnectionFlag = true;
 
 export const listenSignals = (connection: IAmqpConnectionManager): void => {
   listenSystemSignals();
@@ -17,8 +22,26 @@ const listenSystemSignals = (): void => {
 };
 
 const listenConnectionSignals = (connection: IAmqpConnectionManager): void => {
-  connection.on('connect', (data) => {
-    logger.debug(`✅ R4bbit Connection Established:`, data.url);
+  connection.on('connect', async ({ url }) => {
+    // send the URL to ConnectionManager, set a flag in it to recreate
+
+    logger.debug(`✅ R4bbit Connection Established:`, url);
+
+    if (initialConnectionFlag) {
+      initialConnectionFlag = false;
+      return;
+    }
+
+    if (connectionBouncer) {
+      connectionBouncer = false;
+      return;
+    }
+    const connection = amqp.connect(
+      url,
+      ConnectionManager.options?.connectOptions
+    );
+    await ConnectionManager.recreate(connection);
+    connectionBouncer = true;
   });
 
   connection.on('connectFailed', (err) => {

@@ -24,11 +24,11 @@ import { extractAndSetReqId } from '../Common/RequestTracer/extractAndSetReqId';
 import { logger } from '../Common/logger/logger';
 import { HEADER_REQUEST_ID } from '../Common/types';
 import { RequestTracer } from '../Common/RequestTracer/requestTracer';
+import { ConnectionManager } from '../Common/connectionManager/connectionManager';
 
 const DEFAULT_TIMEOUT = 30_000;
 
 export class Client {
-  private _channelWrapper?: ChannelWrapper;
   private eventEmitter = new EventEmitter();
   private messageMap = new Map<string, Subject<unknown>>();
   private replyQueueId: string = nanoidSync();
@@ -37,15 +37,11 @@ export class Client {
     connectionUrls: ConnectionUrl[] | ConnectionUrl,
     options?: InitRabbitOptions
   ): Promise<void> => {
-    this._channelWrapper = await initRabbit(connectionUrls, options);
+    await initRabbit(connectionUrls, options);
   };
 
-  get channelWrapper() {
-    if (!this._channelWrapper) {
-      throw new Error('You have to trigger init method first');
-    }
-
-    return this._channelWrapper;
+  get channelWrapper(): ChannelWrapper {
+    return ConnectionManager.channelWrapper;
   }
 
   public async publishMessage(

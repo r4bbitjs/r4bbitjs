@@ -18,23 +18,18 @@ import { logMqClose } from '../Common/logger/utils/logMqMessage';
 import { prepareResponse } from '../Common/prepareResponse/prepareResponse';
 import { extractAndSetReqId } from '../Common/RequestTracer/extractAndSetReqId';
 import { logger } from '../Common/logger/logger';
+import { ConnectionManager } from '../Common/connectionManager/connectionManager';
 
 export class Server {
-  private channelWrapper?: ChannelWrapper;
-
   public init = async (
     connectionUrls: ConnectionUrl | ConnectionUrl[],
     options?: InitRabbitOptions
   ): Promise<void> => {
-    this.channelWrapper = await initRabbit(connectionUrls, options);
+    await initRabbit(connectionUrls, options);
   };
 
-  public getWrapper(): ChannelWrapper {
-    if (!this.channelWrapper) {
-      throw new Error('You have to trigger init method first');
-    }
-
-    return this.channelWrapper;
+  get channelWrapper(): ChannelWrapper {
+    return ConnectionManager.channelWrapper;
   }
 
   async registerRoute(
@@ -42,9 +37,6 @@ export class Server {
     handlerFunction: Handler | AckHandler,
     options?: ServerOptions
   ): Promise<void> {
-    if (!this.channelWrapper) {
-      throw new Error('You have to trigger init method first');
-    }
     let tempRequestId: string | undefined;
 
     const { exchangeName, queueName, routingKey } = connection;
@@ -124,19 +116,12 @@ export class Server {
     handlerFunction: RpcHandler,
     options?: ServerRPCOptions
   ): Promise<void> {
-    if (!this.channelWrapper) {
-      throw new Error('You have to trigger init method first');
-    }
     let tempRequestId: string | undefined;
     const { exchangeName, queueName, routingKey } = connection;
 
     const reply =
       (consumedMessage: ConsumeMessage | null) =>
       async (replyMessage: Record<string, unknown> | string) => {
-        if (!this.channelWrapper) {
-          throw new Error('You have to trigger init method first');
-        }
-
         if (!consumedMessage) {
           throw new Error('Consume message cannot be null');
         }
@@ -244,7 +229,7 @@ export class Server {
 
   async close() {
     logMqClose('Server');
-    const channelWrapper = this.getWrapper();
+    const channelWrapper = this.channelWrapper;
     await channelWrapper.cancelAll();
     await channelWrapper.close();
   }
