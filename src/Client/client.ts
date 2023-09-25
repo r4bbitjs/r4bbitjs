@@ -32,6 +32,7 @@ export class Client {
   private eventEmitter = new EventEmitter();
   private messageMap = new Map<string, Subject<unknown>>();
   private replyQueueId: string = nanoidSync();
+  private _replyQueueName = ``;
 
   public init = async (
     connectionUrls: ConnectionUrl[] | ConnectionUrl,
@@ -42,6 +43,14 @@ export class Client {
 
   get channelWrapper(): ChannelWrapper {
     return ConnectionManager.channelWrapper;
+  }
+
+  public get replyQueueName(): string {
+    return this._replyQueueName;
+  }
+
+  public set replyQueueName(value: string) {
+    this._replyQueueName = `reply.${value}.${this.replyQueueId}`;
   }
 
   public async publishMessage(
@@ -119,7 +128,7 @@ export class Client {
     options: ClientRPCOptions
   ): Promise<ResponseType> {
     const { exchangeName, replyQueueName, routingKey } = options;
-    const prefixedReplyQueueName = `reply.${replyQueueName}.${this.replyQueueId}`;
+    this.replyQueueName = replyQueueName;
     const createdReqId = fetchReqId();
     const requestTracer = RequestTracer.getInstance();
     requestTracer.setRequestId && requestTracer.setRequestId(createdReqId);
@@ -127,13 +136,13 @@ export class Client {
     await ConnectionSet.assert(
       this.channelWrapper,
       exchangeName,
-      prefixedReplyQueueName,
-      prefixedReplyQueueName
+      this.replyQueueName,
+      this.replyQueueName
     );
 
     try {
       await this.channelWrapper.consume(
-        prefixedReplyQueueName,
+        this.replyQueueName,
         this.clientConsumeFunction(routingKey, options),
         {
           ...options?.consumeOptions,
@@ -167,6 +176,10 @@ export class Client {
         resolve(msg as ResponseType);
       };
       const emitter = this.eventEmitter.once(String(corelationId), listener);
+      this.channelWrapper.on('close', () => {
+        logger.debug('close event called');
+        reject('Panic mode');
+      });
 
       const timeoutValue = options?.timeout ?? DEFAULT_TIMEOUT;
       const timeout = setTimeout(() => {
@@ -205,7 +218,7 @@ export class Client {
             requestId: createdReqId,
           }),
           ...options?.publishOptions,
-          replyTo: prefixedReplyQueueName,
+          replyTo: this.replyQueueName,
           correlationId: corelationId,
         }
       );
@@ -233,7 +246,7 @@ export class Client {
     options: ClientMultipleRPC
   ) {
     const { exchangeName, replyQueueName, routingKey } = options;
-    const prefixedReplyQueueName = `reply.${replyQueueName}.${this.replyQueueId}`;
+    this.replyQueueName = replyQueueName;
 
     const createdReqId = fetchReqId();
     const requestTracer = RequestTracer.getInstance();
@@ -301,12 +314,12 @@ export class Client {
       await ConnectionSet.assert(
         this.channelWrapper,
         exchangeName,
-        prefixedReplyQueueName,
-        prefixedReplyQueueName
+        this.replyQueueName,
+        this.replyQueueName
       );
 
       await this.channelWrapper.consume(
-        prefixedReplyQueueName,
+        this.replyQueueName,
         clientConsumeFunction,
         {
           ...options?.consumeOptions,
@@ -335,7 +348,7 @@ export class Client {
             requestId: createdReqId,
           }),
           ...options?.publishOptions,
-          replyTo: prefixedReplyQueueName,
+          replyTo: this.replyQueueName,
           correlationId: corelationId,
         }
       );
@@ -360,12 +373,20 @@ export class Client {
 
   public async close() {
     logMqClose('Client');
-    await this.channelWrapper.cancelAll();
-    await this.channelWrapper.close();
+    try {
+      await this.channelWrapper.cancelAll();
+      await this.channelWrapper.deleteQueue(this.replyQueueName);
+      await this.channelWrapper.close();
+    } catch (err) {
+      logger.error(
+        'Errors while closing the clinet:',
+        err as unknown as object
+      );
+    }
   }
 }
 
-let client: Client;
+export let client: Client;
 export const getClient = async (
   connectionUrls: ConnectionUrl | ConnectionUrl[],
   options?: InitRabbitOptions

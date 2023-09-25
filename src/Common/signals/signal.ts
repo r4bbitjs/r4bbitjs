@@ -2,9 +2,9 @@ import { IAmqpConnectionManager } from 'amqp-connection-manager/dist/esm/AmqpCon
 import { logger } from '../logger/logger';
 import { ConnectionManager } from '../connectionManager/connectionManager';
 import amqp from 'amqp-connection-manager';
+import { client } from '../../Client/client';
 
 let connectionBouncer = true;
-let initialConnectionFlag = true;
 
 export const listenSignals = (connection: IAmqpConnectionManager): void => {
   listenSystemSignals();
@@ -27,20 +27,31 @@ const listenConnectionSignals = (connection: IAmqpConnectionManager): void => {
 
     logger.debug(`✅ R4bbit Connection Established:`, url);
 
-    if (initialConnectionFlag) {
-      initialConnectionFlag = false;
-      return;
-    }
-
     if (connectionBouncer) {
+      logger.debug('Am I here ...');
       connectionBouncer = false;
       return;
     }
+
+    logger.debug('Reconnect processing ...');
     const connection = amqp.connect(
       url,
       ConnectionManager.options?.connectOptions
     );
+
+    await client.channelWrapper.close();
     await ConnectionManager.recreate(connection);
+    logger.debug(`We're about to delete a queue: ${client.replyQueueName}`);
+    // todo: 2s timeouti
+    try {
+      await client.channelWrapper.deleteQueue(client.replyQueueName);
+
+      logger.debug('Delete queue called');
+    } catch (error) {
+      logger.error('Deletion err: ', error as unknown as object);
+    }
+    logger.info('Queue successfully deleted');
+
     connectionBouncer = true;
   });
 
@@ -65,5 +76,5 @@ const listenConnectionSignals = (connection: IAmqpConnectionManager): void => {
 };
 
 const graceful = () => {
-  process.exit(-1);
+  client.close().then(() => process.exit(0));
 };
