@@ -27,6 +27,8 @@ import { RequestTracer } from '../Common/RequestTracer/requestTracer';
 
 const DEFAULT_TIMEOUT = 30_000;
 
+export let consumerTags: string[] = [];
+
 export class Client {
   private _channelWrapper?: ChannelWrapper;
   private eventEmitter = new EventEmitter();
@@ -102,21 +104,21 @@ export class Client {
 
   private clientConsumeFunction =
     (routingKey: string, options: ClientRPCOptions) =>
-    (msg: ConsumeMessage) => {
-      extractAndSetReqId(msg.properties.headers);
-      logger.communicationLog({
-        data: prepareResponse(msg, options?.responseContains),
-        actor: 'Rpc Client',
-        action: 'receive',
-        topic: routingKey,
-        requestId: msg.properties.headers[HEADER_REQUEST_ID],
-        isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
-      });
-      this.eventEmitter.emit(
-        msg?.properties.correlationId,
-        prepareResponse(msg, options?.responseContains)
-      );
-    };
+      (msg: ConsumeMessage) => {
+        extractAndSetReqId(msg.properties.headers);
+        logger.communicationLog({
+          data: prepareResponse(msg, options?.responseContains),
+          actor: 'Rpc Client',
+          action: 'receive',
+          topic: routingKey,
+          requestId: msg.properties.headers[HEADER_REQUEST_ID],
+          isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
+        });
+        this.eventEmitter.emit(
+          msg?.properties.correlationId,
+          prepareResponse(msg, options?.responseContains)
+        );
+      };
 
   public async publishRPCMessage<ResponseType>(
     message: Buffer | string | unknown,
@@ -137,7 +139,7 @@ export class Client {
     );
 
     try {
-      await this.channelWrapper.consume(
+      const { consumerTag } = await this.channelWrapper.consume(
         prefixedReplyQueueName,
         this.clientConsumeFunction(routingKey, options),
         {
@@ -145,6 +147,8 @@ export class Client {
           noAck: true,
         }
       );
+
+      consumerTags.push(consumerTag);
     } catch (err: unknown) {
       logger.communicationLog({
         level: 'error',
@@ -169,6 +173,8 @@ export class Client {
 
       const listener = (msg: ConsumeMessage) => {
         clearTimeout(timeout);
+        // todo remove the consumer tag
+        // consumerTags = consumerTags.filter((tag) => tag !== consumerTagTemp);
         resolve(msg as ResponseType);
       };
       const emitter = this.eventEmitter.once(String(corelationId), listener);
@@ -187,6 +193,7 @@ export class Client {
           requestId: createdReqId,
         });
 
+        // todo remove the consumer tag
         reject(timeoutMessage);
       }, timeoutValue);
 
@@ -198,22 +205,27 @@ export class Client {
         action: 'publish',
         requestId: createdReqId,
       });
-      await this.channelWrapper.publish(
-        exchangeName,
-        routingKey,
-        encodeMessage(message, options?.sendType),
-        {
-          headers: prepareHeaders({
-            isServer: false,
-            sendType: options?.sendType,
-            receiveType: options?.receiveType,
-            requestId: createdReqId,
-          }),
-          ...options?.publishOptions,
-          replyTo: prefixedReplyQueueName,
-          correlationId: corelationId,
-        }
-      );
+
+      try {
+        await this.channelWrapper.publish(
+          exchangeName,
+          routingKey,
+          encodeMessage(message, options?.sendType),
+          {
+            headers: prepareHeaders({
+              isServer: false,
+              sendType: options?.sendType,
+              receiveType: options?.receiveType,
+              requestId: createdReqId,
+            }),
+            ...options?.publishOptions,
+            replyTo: prefixedReplyQueueName,
+            correlationId: corelationId,
+          }
+        );
+      } catch (err) {
+        console.log('fuckin err', err);
+      }
     }) as Promise<ResponseType>;
   }
 
@@ -311,14 +323,17 @@ export class Client {
         true
       );
 
-      await this.channelWrapper.consume(
+      const reply = await this.channelWrapper.consume(
         prefixedReplyQueueName,
         clientConsumeFunction,
         {
           ...options?.consumeOptions,
           noAck: true,
+          // consumerTag: 'xxx',
         }
       );
+
+      console.log('assigned reply with a consumerTag', reply);
 
       logger.communicationLog({
         data: message,
@@ -371,7 +386,7 @@ export class Client {
   }
 }
 
-let client: Client;
+export let client: Client;
 export const getClient = async (
   connectionUrls: ConnectionUrl | ConnectionUrl[],
   options?: InitRabbitOptions

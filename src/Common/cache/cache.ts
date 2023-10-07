@@ -43,9 +43,9 @@ export class ConnectionSet {
     routingKey = '',
     isReplyQueue = false
   ): Promise<void> => {
-    if (this.isCacheHit(exchange, queue, routingKey)) {
-      return;
-    }
+    // if (this.isCacheHit(exchange, queue, routingKey)) {
+    //   return;
+    // }
 
     try {
       await channelWrapper.assertExchange(exchange, 'topic');
