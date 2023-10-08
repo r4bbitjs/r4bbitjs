@@ -62,7 +62,12 @@ export class ConnectionSet {
         await channelWrapper.bindQueue(queue, exchange, routingKey);
       }
     } catch (err: unknown) {
-      logger.error('Assertion error, exchange queue or binding threw an error');
+      logger.error(
+        'Assertion error, exchange queue or binding threw an error',
+        err as object
+      );
+
+      throw err;
     }
 
     this.setCache(exchange, queue, routingKey);

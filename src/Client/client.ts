@@ -27,7 +27,7 @@ import { RequestTracer } from '../Common/RequestTracer/requestTracer';
 
 const DEFAULT_TIMEOUT = 30_000;
 
-export let consumerTags: string[] = [];
+export const consumerTags: string[] = [];
 
 export class Client {
   private _channelWrapper?: ChannelWrapper;
@@ -104,21 +104,21 @@ export class Client {
 
   private clientConsumeFunction =
     (routingKey: string, options: ClientRPCOptions) =>
-      (msg: ConsumeMessage) => {
-        extractAndSetReqId(msg.properties.headers);
-        logger.communicationLog({
-          data: prepareResponse(msg, options?.responseContains),
-          actor: 'Rpc Client',
-          action: 'receive',
-          topic: routingKey,
-          requestId: msg.properties.headers[HEADER_REQUEST_ID],
-          isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
-        });
-        this.eventEmitter.emit(
-          msg?.properties.correlationId,
-          prepareResponse(msg, options?.responseContains)
-        );
-      };
+    (msg: ConsumeMessage) => {
+      extractAndSetReqId(msg.properties.headers);
+      logger.communicationLog({
+        data: prepareResponse(msg, options?.responseContains),
+        actor: 'Rpc Client',
+        action: 'receive',
+        topic: routingKey,
+        requestId: msg.properties.headers[HEADER_REQUEST_ID],
+        isDataHidden: options?.loggerOptions?.isConsumeDataHidden,
+      });
+      this.eventEmitter.emit(
+        msg?.properties.correlationId,
+        prepareResponse(msg, options?.responseContains)
+      );
+    };
 
   public async publishRPCMessage<ResponseType>(
     message: Buffer | string | unknown,
@@ -130,15 +130,15 @@ export class Client {
     const requestTracer = RequestTracer.getInstance();
     requestTracer.setRequestId && requestTracer.setRequestId(createdReqId);
 
-    await ConnectionSet.assert(
-      this.channelWrapper,
-      exchangeName,
-      prefixedReplyQueueName,
-      prefixedReplyQueueName,
-      true
-    );
-
     try {
+      await ConnectionSet.assert(
+        this.channelWrapper,
+        exchangeName,
+        prefixedReplyQueueName,
+        prefixedReplyQueueName,
+        true
+      );
+
       const { consumerTag } = await this.channelWrapper.consume(
         prefixedReplyQueueName,
         this.clientConsumeFunction(routingKey, options),
@@ -164,7 +164,7 @@ export class Client {
         isDataHidden: options.loggerOptions?.isConsumeDataHidden,
         requestId: createdReqId,
       });
-      throw err;
+      // throw err;
     }
 
     // eslint-disable-next-line no-async-promise-executor
